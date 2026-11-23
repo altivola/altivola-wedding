@@ -1,215 +1,219 @@
-import { ArrowDown, ArrowLeft, ArrowRight, Maximize2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type WeddingDesign, type WeddingTemplate, weddingTemplates } from '@app/api/wedding-design'
+import { Link } from '@tanstack/react-router'
+import { ArrowUpRight } from 'lucide-react'
+import { useState } from 'react'
 
 export const themes = {
+  cinema: {
+    label: 'Hujan di Bioskop',
+    image: 'bioskop',
+    medium: 'Adegan interaktif',
+    preview: 'Ambil tiket',
+    description: 'Masuk dari jalan yang kehujanan, bawa tiket ke lobi, lalu konfirmasi hadir di auditorium.',
+  },
+  radio: {
+    label: 'Siaran Tengah Malam',
+    image: 'cinema',
+    medium: 'Musik & benda interaktif',
+    preview: 'Cari frekuensinya',
+    description: 'Putar kenop radio untuk menemukan siaran pernikahan dan dengarkan lagu pasangan.',
+  },
+  lantern: {
+    label: 'Jalur Lampion',
+    image: 'garden',
+    medium: 'Perjalanan scroll',
+    preview: 'Ikuti jalurnya',
+    description: 'Ikuti jalur sepanjang undangan. Peta perjalanan menandai tempat yang sedang kamu lewati.',
+  },
+  town: {
+    label: 'Kota Undangan',
+    image: 'garden',
+    medium: 'Jelajah 2D',
+    preview: 'Jalan keliling kota',
+    description: 'Gerakkan karakter melintasi kota. Masuk ke bangunan untuk membuka cerita, album, dan acara.',
+  },
+  darkroom: {
+    label: 'Kamar Gelap',
+    image: 'cinema',
+    medium: 'Foto interaktif',
+    preview: 'Cuci film',
+    description: 'Cetak lembar kontak dari foto pasangan dan buka undangan dari meja kamar gelap.',
+  },
+  rain: {
+    label: 'Hujan Pertama',
+    image: 'cinema',
+    medium: 'Ilustrasi interaktif',
+    preview: 'Usap jendela',
+    description: 'Singkirkan tetes hujan di jendela untuk melihat foto pasangan dan mengungkap undangan.',
+  },
+  puzzle: {
+    label: 'Kotak Rahasia',
+    image: 'press',
+    medium: 'Mini-game',
+    preview: 'Cocokkan keping',
+    description: 'Buka laci undangan dengan mencocokkan keping yang tersembunyi di papan.',
+  },
+  exhibit: {
+    label: 'Ruang Pamer',
+    image: 'press',
+    medium: 'Ruang berkurasi',
+    preview: 'Masuk galeri',
+    description: 'Pilih ruang dari denah pameran. Tiap ruang menampilkan satu bagian undangan.',
+  },
   garden: {
+    preview: 'Jelajah taman',
     label: 'Taman Kertas',
     image: 'garden',
-    medium: 'Ilustrasi kertas',
+    medium: 'Dunia 3D',
+    description: 'Tamu berjalan di taman untuk menemukan album, lokasi acara, dan RSVP.',
   },
   night: {
+    preview: 'Buka bab pertama',
     label: 'Blue Hour',
     image: 'cinema',
-    medium: 'Film analog',
+    medium: 'Cerita per bab',
+    description: 'Sampul seperti adegan pembuka, lalu tamu membuka cerita dan album satu bab demi satu.',
   },
   print: {
+    preview: '14 Februari 2027',
     label: 'Ruang Cetak',
     image: 'press',
-    medium: 'Sablon grafis',
+    medium: 'Majalah digital',
+    description: 'Sampul dua kolom, daftar isi, dan semua detail acara dalam satu halaman.',
   },
-}
+  letter: {
+    label: 'Surat Senja',
+    image: 'press',
+    medium: 'Buka amplop',
+    preview: 'Buka segel',
+    description: 'Buka segel amplop untuk membaca surat pribadi, melihat detail acara, dan membalas undangan.',
+  },
+  weekend: {
+    label: 'Peta Akhir Pekan',
+    image: 'garden',
+    medium: 'Panduan acara',
+    preview: 'Lihat agenda',
+    description: 'Halaman agenda dengan rundown per waktu dan pintasan langsung ke bagian yang dicari tamu.',
+  },
+  keepsake: {
+    label: 'Meja Kenangan',
+    image: 'cinema',
+    medium: 'Album interaktif',
+    preview: 'Lihat foto',
+    description: 'Foto jadi pintu masuk. Tamu bisa membesarkan album, lalu membaca kisah dan detail di bawahnya.',
+  },
+} satisfies Record<
+  WeddingTemplate,
+  { label: string; image: string; medium: string; preview: string; description: string }
+>
 
 export type Theme = keyof typeof themes
-const collection: Theme[] = ['garden', 'night', 'print']
-const chapters = ['Sampul', 'Album', 'Acara'] as const
-type Chapter = (typeof chapters)[number]
 
-export function WeddingGallery({
-  initialTheme,
-  onChoose,
-  onExplore,
-}: {
-  initialTheme: Theme
-  onChoose: (theme: Theme) => void
-  onExplore: (theme: Theme, chapter: Chapter) => void
-}) {
-  const [selected, setSelected] = useState(initialTheme)
-  const [chapter, setChapter] = useState<Chapter>('Sampul')
-  const dialog = useRef<HTMLDialogElement>(null)
-  const artwork = useRef<HTMLImageElement>(null)
-  const opener = useRef<HTMLButtonElement>(null)
-  const current = themes[selected]
-  const selection = collection.indexOf(selected)
+const compositions = {
+  cinema: { cover: 'poster', flow: 'page', album: 'filmstrip', type: 'serif', palette: 'ink', x: 50, y: 75 },
+  radio: { cover: 'frame', flow: 'page', album: 'filmstrip', type: 'sans', palette: 'ink', x: 50, y: 84 },
+  lantern: { cover: 'poster', flow: 'page', album: 'grid', type: 'serif', palette: 'cream', x: 50, y: 67 },
+  town: { cover: 'split', flow: 'page', album: 'grid', type: 'sans', palette: 'cream', x: 50, y: 50 },
+  darkroom: { cover: 'split', flow: 'page', album: 'filmstrip', type: 'sans', palette: 'ink', x: 50, y: 50 },
+  rain: { cover: 'poster', flow: 'page', album: 'stack', type: 'italic', palette: 'ink', x: 50, y: 82 },
+  puzzle: { cover: 'split', flow: 'page', album: 'grid', type: 'serif', palette: 'rose', x: 50, y: 50 },
+  exhibit: { cover: 'split', flow: 'page', album: 'grid', type: 'sans', palette: 'cream', x: 50, y: 50 },
+  garden: { cover: 'poster', flow: 'rooms', album: 'grid', type: 'serif', palette: 'template', x: 50, y: 80 },
+  night: { cover: 'poster', flow: 'chapters', album: 'filmstrip', type: 'serif', palette: 'ink', x: 9, y: 75 },
+  print: { cover: 'split', flow: 'page', album: 'grid', type: 'sans', palette: 'cream', x: 50, y: 50 },
+  letter: { cover: 'frame', flow: 'page', album: 'stack', type: 'italic', palette: 'rose', x: 50, y: 55 },
+  weekend: { cover: 'split', flow: 'page', album: 'filmstrip', type: 'sans', palette: 'cream', x: 50, y: 50 },
+  keepsake: { cover: 'poster', flow: 'page', album: 'grid', type: 'serif', palette: 'ink', x: 50, y: 83 },
+} satisfies Record<Theme, Partial<WeddingDesign>>
 
-  useEffect(() => onExplore(selected, chapter), [selected, chapter, onExplore])
+export function templateSearch(search: Record<string, unknown>): { template?: Theme } {
+  return { template: weddingTemplates.find((template) => template === search.template) }
+}
 
-  function stepTheme(offset: number) {
-    const next = collection.at((selection + offset + collection.length) % collection.length)
-    if (next) setSelected(next)
-    setChapter('Sampul')
-  }
+export function applyTemplate(design: WeddingDesign, theme: Theme): WeddingDesign {
+  const first: WeddingDesign['sections'][number] | undefined =
+    theme === 'keepsake' || theme === 'darkroom' ? 'album' : theme === 'weekend' ? 'event' : undefined
+  const sections: WeddingDesign['sections'] = first
+    ? [first, ...design.sections.filter((section) => section !== first)]
+    : design.sections
+  return { ...design, ...compositions[theme], sections, template: theme }
+}
 
-  function openSample(button: HTMLButtonElement) {
-    if (!dialog.current || !artwork.current) return
-    const from = artwork.current.getBoundingClientRect()
-    opener.current = button
-    dialog.current.returnValue = ''
-    dialog.current.showModal()
-    const panel = dialog.current.querySelector<HTMLElement>('.wedding-dialog-visual')
-    if (!panel || matchMedia('(prefers-reduced-motion: reduce)').matches || !panel.animate) return
-    const to = panel.getBoundingClientRect()
-    if (to.width === 0 || to.height === 0) return
-    panel.animate(
-      [
-        {
-          transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})`,
-          clipPath: 'inset(0 round 13px)',
-        },
-        { transform: 'none', clipPath: 'inset(0 round 0)' },
-      ],
-      { duration: 550, easing: 'cubic-bezier(.2,.8,.18,1)' },
-    )
-  }
+const categories = {
+  Semua: ['garden', ...weddingTemplates.filter((theme) => theme !== 'garden')],
+  Interaktif: ['garden', 'cinema', 'radio', 'town', 'darkroom', 'rain', 'puzzle', 'letter'],
+  'Cerita & foto': ['lantern', 'night', 'keepsake', 'darkroom', 'rain', 'exhibit'],
+  Editorial: ['print', 'weekend', 'exhibit'],
+} satisfies Record<string, readonly Theme[]>
 
-  function chooseTheme() {
-    if (dialog.current?.open) dialog.current.close('choose')
-    onChoose(selected)
-  }
-
+export function TemplateCards({ current, onChoose }: { current?: Theme; onChoose?: (theme: Theme) => void }) {
+  const [category, setCategory] = useState<keyof typeof categories>('Semua')
   return (
-    <section aria-labelledby="collection-title" className="wedding-collection" data-collection-theme={selected}>
-      <div className="wedding-collection-intro">
-        <p className="wedding-overline">Studio undangan pernikahan</p>
-        <h1 id="collection-title">
-          Hari itu,
-          <br />
-          <em>cara kalian.</em>
-        </h1>
-        <p>Pilih desain yang terasa dekat dengan kalian. Buka sampelnya, lalu isi dengan cerita kalian sendiri.</p>
-        <div className="wedding-collection-actions">
-          <button className="collection-primary" type="button" onClick={chooseTheme}>
-            Pakai {current.label} <ArrowDown size={18} />
-          </button>
-          <button type="button" className="collection-outline" onClick={(event) => openSample(event.currentTarget)}>
-            Buka contoh <Maximize2 size={16} />
-          </button>
-        </div>
-      </div>
-      <div className="wedding-display">
-        <div className="wedding-display-window" data-chapter={chapter}>
-          <img ref={artwork} className="display-art" key={current.image} src={`/wedding/${current.image}.jpg`} alt="" />
-          {chapter === 'Album' && (
-            <div className="wedding-photo-spread" aria-hidden="true">
-              <SamplePhotos />
-            </div>
-          )}
-          <div className="wedding-display-caption" key={`${selected}-${chapter}`}>
-            <p>
-              {chapter === 'Sampul'
-                ? 'Yth. Keluarga Ibu Ratna'
-                : chapter === 'Album'
-                  ? 'Album kami'
-                  : 'Hari pernikahan'}
-            </p>
-            <strong>
-              {chapter === 'Sampul' ? 'Aruna & Dimas' : chapter === 'Album' ? 'Dari satu sore' : '14 Februari 2027'}
-            </strong>
-            {chapter === 'Acara' && <p>16.00 WIB · Jakarta</p>}
-          </div>
-        </div>
-        <div className="wedding-display-controls">
-          <button type="button" aria-label="Template sebelumnya" onClick={() => stepTheme(-1)}>
-            <ArrowLeft size={19} />
-          </button>
-          <div aria-live="polite">
-            <strong>{current.label}</strong>
-            <small>{current.medium}</small>
-          </div>
-          <button type="button" aria-label="Template berikutnya" onClick={() => stepTheme(1)}>
-            <ArrowRight size={19} />
-          </button>
-        </div>
-        <fieldset className="wedding-chapters">
-          <legend className="sr-only">Bagian contoh</legend>
-          {chapters.map((item) => (
-            <button key={item} type="button" aria-pressed={chapter === item} onClick={() => setChapter(item)}>
-              {item}
-            </button>
-          ))}
-        </fieldset>
-      </div>
-      <fieldset className="wedding-template-strip">
-        <legend className="sr-only">Pilih template</legend>
-        {collection.map((item) => (
-          <button
-            key={item}
-            type="button"
-            aria-pressed={selected === item}
-            onClick={() => {
-              setSelected(item)
-              setChapter('Sampul')
-            }}
-          >
-            <img alt="" src={`/wedding/${themes[item].image}.jpg`} />
-            <span>{themes[item].label}</span>
+    <>
+      <fieldset className="template-filters">
+        <legend className="sr-only">Jenis template</legend>
+        {(Object.keys(categories) as (keyof typeof categories)[]).map((item) => (
+          <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)}>
+            {item}
           </button>
         ))}
       </fieldset>
-      <dialog
-        ref={dialog}
-        className="wedding-sample-dialog"
-        aria-labelledby="wedding-sample-title"
-        onClose={() => {
-          if (dialog.current?.returnValue !== 'choose') opener.current?.focus()
-        }}
-      >
-        <header>
-          <h2 id="wedding-sample-title">{current.label}</h2>
-          <button
-            type="button"
-            className="sample-close"
-            aria-label="Tutup contoh"
-            onClick={() => dialog.current?.close('dismiss')}
-          >
-            <X size={22} />
-          </button>
-        </header>
-        <article data-collection-theme={selected}>
-          <div className="wedding-dialog-visual">
-            <img src={`/wedding/${current.image}.jpg`} alt="" loading="lazy" />
-            <div>
-              <p>Yth. Keluarga Ibu Ratna</p>
-              <h3>Aruna &amp; Dimas</h3>
-              <p>14 Februari 2027</p>
-            </div>
-          </div>
-          <div className="wedding-dialog-story">
-            <h3>Berawal dari satu sore</h3>
-            <p>Kami kenal di toko buku kecil di Jakarta. Tujuh tahun kemudian, kami mau merayakannya bareng kalian.</p>
-            <figure className="wedding-dialog-album" aria-label="Contoh album">
-              <SamplePhotos />
-            </figure>
-            <h3>Hari pernikahan</h3>
-            <p>Minggu, 14 Februari 2027 · 16.00 WIB</p>
-            <p>Jakarta</p>
-          </div>
-        </article>
-        <footer>
-          <button type="button" className="sample-choose" onClick={chooseTheme}>
-            Pakai template ini <ArrowRight size={18} />
-          </button>
-        </footer>
-      </dialog>
-    </section>
+      <div className="template-cards">
+        {categories[category].map((theme) => {
+          const item = themes[theme]
+          return (
+            <article className="template-card" key={theme} data-preview={theme}>
+              <Link
+                className="template-art"
+                to="/contoh"
+                search={{ template: theme }}
+                target={onChoose ? '_blank' : undefined}
+                rel={onChoose ? 'noopener' : undefined}
+                aria-label={`Lihat contoh ${item.label}`}
+              >
+                {theme === 'cinema' && <i className="cinema-template-art" />}
+                {theme !== 'cinema' && theme !== 'letter' && (
+                  <img src={`/wedding/${item.image}.jpg`} alt="" loading="lazy" />
+                )}
+                <span className="template-art-caption" aria-hidden="true">
+                  <strong>{theme === 'weekend' ? '16.00 · Akad' : 'Aruna & Dimas'}</strong>
+                  <span>{item.preview}</span>
+                </span>
+              </Link>
+              <div className="template-card-copy">
+                <span>{item.medium}</span>
+                <h3>{item.label}</h3>
+                <p>{item.description}</p>
+                <div className="template-card-actions">
+                  <Link
+                    to="/contoh"
+                    search={{ template: theme }}
+                    target={onChoose ? '_blank' : undefined}
+                    rel={onChoose ? 'noopener' : undefined}
+                  >
+                    Buka contoh <ArrowUpRight size={16} aria-hidden="true" />
+                  </Link>
+                  {onChoose && (
+                    <button type="button" disabled={theme === current} onClick={() => onChoose(theme)}>
+                      {theme === current ? 'Sedang dipakai' : 'Pakai template'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
-function SamplePhotos() {
+export function WeddingGallery({ initialTheme, onChoose }: { initialTheme: Theme; onChoose: (theme: Theme) => void }) {
   return (
-    <>
-      <img src="/wedding/cinema.jpg" alt="Pasangan di rumah kaca" />
-      <img src="/wedding/garden.jpg" alt="Ilustrasi taman acara" />
-      <img src="/wedding/press.jpg" alt="Detail kartu undangan" />
-    </>
+    <section className="studio-template-gallery" aria-labelledby="template-title">
+      <h2 id="template-title">Pilih template</h2>
+      <p>Ganti susunan dan cara tamu membuka undangan. Isi, foto, dan musik tetap tersimpan di draft ini.</p>
+      <TemplateCards current={initialTheme} onChoose={onChoose} />
+    </section>
   )
 }

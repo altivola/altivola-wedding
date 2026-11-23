@@ -224,6 +224,82 @@
         }
       }
     },
+    "/music": {
+      "get": {
+        "operationId": "music.search",
+        "summary": "Search for CC0 background music",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "openverse"
+                      },
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 180
+                      },
+                      "artist": {
+                        "type": "string",
+                        "maxLength": 140
+                      },
+                      "seconds": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991,
+                        "exclusiveMinimum": 0
+                      },
+                      "src": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "source": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "title",
+                      "artist",
+                      "seconds",
+                      "src",
+                      "source"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/weddings": {
       "post": {
         "operationId": "weddings.publish",
@@ -259,9 +335,20 @@
                       },
                       "theme": {
                         "enum": [
+                          "cinema",
+                          "radio",
+                          "lantern",
+                          "town",
+                          "darkroom",
+                          "rain",
+                          "puzzle",
+                          "exhibit",
                           "garden",
                           "night",
-                          "print"
+                          "print",
+                          "letter",
+                          "weekend",
+                          "keepsake"
                         ],
                         "type": "string"
                       },
@@ -305,14 +392,20 @@
                           },
                           "sections": {
                             "type": "array",
-                            "maxItems": 5,
+                            "maxItems": 11,
                             "items": {
                               "enum": [
                                 "story",
                                 "event",
                                 "album",
                                 "note",
-                                "rsvp"
+                                "rsvp",
+                                "custom-1",
+                                "custom-2",
+                                "custom-3",
+                                "custom-4",
+                                "custom-5",
+                                "custom-6"
                               ],
                               "type": "string"
                             }
@@ -329,9 +422,61 @@
                             ],
                             "type": "string"
                           },
+                          "template": {
+                            "enum": [
+                              "cinema",
+                              "radio",
+                              "lantern",
+                              "town",
+                              "darkroom",
+                              "rain",
+                              "puzzle",
+                              "exhibit",
+                              "garden",
+                              "night",
+                              "print",
+                              "letter",
+                              "weekend",
+                              "keepsake"
+                            ],
+                            "type": "string"
+                          },
+                          "schedule": {
+                            "type": "array",
+                            "maxItems": 8,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "time": {
+                                  "type": "string",
+                                  "maxLength": 60
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                "detail": {
+                                  "type": "string",
+                                  "maxLength": 280
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "time",
+                                "title",
+                                "detail"
+                              ]
+                            }
+                          },
                           "flow": {
                             "enum": [
                               "rooms",
+                              "chapters",
                               "page"
                             ],
                             "type": "string"
@@ -371,7 +516,13 @@
                                 "event",
                                 "album",
                                 "note",
-                                "rsvp"
+                                "rsvp",
+                                "custom-1",
+                                "custom-2",
+                                "custom-3",
+                                "custom-4",
+                                "custom-5",
+                                "custom-6"
                               ],
                               "type": "string"
                             },
@@ -451,7 +602,13 @@
                                 "event",
                                 "album",
                                 "note",
-                                "rsvp"
+                                "rsvp",
+                                "custom-1",
+                                "custom-2",
+                                "custom-3",
+                                "custom-4",
+                                "custom-5",
+                                "custom-6"
                               ],
                               "type": "string"
                             },
@@ -472,6 +629,84 @@
                           "cover",
                           "sections",
                           "note"
+                        ]
+                      },
+                      "music": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "original",
+                                      "beranda"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "apple"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "pattern": "^\\d{1,14}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "recording"
+                                  },
+                                  "id": {
+                                    "enum": [
+                                      "gymnopedie",
+                                      "thinking-of-you",
+                                      "love-away"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "openverse"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
                         ]
                       }
                     },
@@ -630,9 +865,20 @@
                         },
                         "theme": {
                           "enum": [
+                            "cinema",
+                            "radio",
+                            "lantern",
+                            "town",
+                            "darkroom",
+                            "rain",
+                            "puzzle",
+                            "exhibit",
                             "garden",
                             "night",
-                            "print"
+                            "print",
+                            "letter",
+                            "weekend",
+                            "keepsake"
                           ],
                           "type": "string"
                         },
@@ -676,14 +922,20 @@
                             },
                             "sections": {
                               "type": "array",
-                              "maxItems": 5,
+                              "maxItems": 11,
                               "items": {
                                 "enum": [
                                   "story",
                                   "event",
                                   "album",
                                   "note",
-                                  "rsvp"
+                                  "rsvp",
+                                  "custom-1",
+                                  "custom-2",
+                                  "custom-3",
+                                  "custom-4",
+                                  "custom-5",
+                                  "custom-6"
                                 ],
                                 "type": "string"
                               }
@@ -700,9 +952,61 @@
                               ],
                               "type": "string"
                             },
+                            "template": {
+                              "enum": [
+                                "cinema",
+                                "radio",
+                                "lantern",
+                                "town",
+                                "darkroom",
+                                "rain",
+                                "puzzle",
+                                "exhibit",
+                                "garden",
+                                "night",
+                                "print",
+                                "letter",
+                                "weekend",
+                                "keepsake"
+                              ],
+                              "type": "string"
+                            },
+                            "schedule": {
+                              "type": "array",
+                              "maxItems": 8,
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "time": {
+                                    "type": "string",
+                                    "maxLength": 60
+                                  },
+                                  "title": {
+                                    "type": "string",
+                                    "maxLength": 120
+                                  },
+                                  "detail": {
+                                    "type": "string",
+                                    "maxLength": 280
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "time",
+                                  "title",
+                                  "detail"
+                                ]
+                              }
+                            },
                             "flow": {
                               "enum": [
                                 "rooms",
+                                "chapters",
                                 "page"
                               ],
                               "type": "string"
@@ -742,7 +1046,13 @@
                                   "event",
                                   "album",
                                   "note",
-                                  "rsvp"
+                                  "rsvp",
+                                  "custom-1",
+                                  "custom-2",
+                                  "custom-3",
+                                  "custom-4",
+                                  "custom-5",
+                                  "custom-6"
                                 ],
                                 "type": "string"
                               },
@@ -822,7 +1132,13 @@
                                   "event",
                                   "album",
                                   "note",
-                                  "rsvp"
+                                  "rsvp",
+                                  "custom-1",
+                                  "custom-2",
+                                  "custom-3",
+                                  "custom-4",
+                                  "custom-5",
+                                  "custom-6"
                                 ],
                                 "type": "string"
                               },
@@ -843,6 +1159,125 @@
                             "cover",
                             "sections",
                             "note"
+                          ]
+                        },
+                        "music": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "enum": [
+                                        "original",
+                                        "beranda"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "const": "apple"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "pattern": "^\\d{1,14}$"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "artist": {
+                                      "type": "string"
+                                    },
+                                    "albumId": {
+                                      "type": "string",
+                                      "pattern": "^\\d{1,14}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "id",
+                                    "title",
+                                    "artist",
+                                    "albumId"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "const": "recording"
+                                    },
+                                    "id": {
+                                      "enum": [
+                                        "gymnopedie",
+                                        "thinking-of-you",
+                                        "love-away"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "id"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "const": "openverse"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "title": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 180
+                                    },
+                                    "artist": {
+                                      "type": "string",
+                                      "maxLength": 140
+                                    },
+                                    "seconds": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991,
+                                      "exclusiveMinimum": 0
+                                    },
+                                    "src": {
+                                      "type": "string",
+                                      "format": "uri"
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "format": "uri"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "id",
+                                    "title",
+                                    "artist",
+                                    "seconds",
+                                    "src",
+                                    "source"
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
                           ]
                         },
                         "photos": {

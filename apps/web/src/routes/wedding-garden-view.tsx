@@ -1,6 +1,7 @@
 import { type GardenCharacter, type GardenMap, gardenCharacters, gardenMaps } from '@app/api/wedding-design'
 import { type PointerEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import type { AlbumCamera, GardenPhoto, GardenPlace, GardenStation, mountGarden } from './wedding-garden'
+import { createGardenAudio } from './wedding-garden-audio'
 import { gardenCharacterNames, gardenMapNames } from './wedding-garden-options'
 
 type Garden = ReturnType<typeof mountGarden>
@@ -9,22 +10,22 @@ export function WeddingGarden({
   places,
   onVisit,
   onExit,
-  accountAction,
   album,
   event,
   rsvp,
   rsvpSaved = false,
+  soundtrack,
   gardenMap = 'twilight',
   gardenCharacter = 'lantern',
 }: {
   places: GardenPlace[]
   onVisit: (id: string) => void
   onExit?: () => void
-  accountAction?: ReactNode
   album?: GardenPhoto[]
   event?: { date: string; venue: string }
   rsvp?: ReactNode
   rsvpSaved?: boolean
+  soundtrack?: ReactNode
   gardenMap?: GardenMap
   gardenCharacter?: GardenCharacter
 }) {
@@ -35,11 +36,8 @@ export function WeddingGarden({
   const [character, setCharacter] = useState(gardenCharacter)
   const host = useRef<HTMLDivElement>(null)
   const controller = useRef<Garden>(null)
-  const audio = useRef<{ context: AudioContext; base: GainNode }>(null)
-  const music = useRef<HTMLAudioElement>(null)
-  const [sound, setSound] = useState(false)
-  const [volume, setVolume] = useState(0.48)
-  const [soundUnavailable, setSoundUnavailable] = useState(false)
+  const audio = useRef<ReturnType<typeof createGardenAudio>>(null)
+  const [effects, setEffects] = useState(false)
   const [ready, setReady] = useState(false)
   const [station, setStation] = useState<GardenStation | null>(null)
   const albumOpen = station === 'album'
@@ -76,59 +74,20 @@ export function WeddingGarden({
     if (joystickPointer.current === event.pointerId) resetJoystick()
   }
 
-  const chime = useCallback((frequency: number) => {
-    const system = audio.current
-    if (system?.context.state !== 'running') return
-    const { context, base } = system
-    const now = context.currentTime
-    const voice = context.createOscillator()
-    const level = context.createGain()
-    voice.type = 'sine'
-    voice.frequency.value = frequency
-    level.gain.setValueAtTime(0, now)
-    level.gain.linearRampToValueAtTime(0.28, now + 0.035)
-    level.gain.exponentialRampToValueAtTime(0.001, now + 0.66)
-    voice.connect(level).connect(base)
-    voice.start()
-    voice.stop(now + 0.68)
-  }, [])
-
-  async function toggleSound() {
-    if (sound) {
-      music.current?.pause()
-      void audio.current?.context.suspend().catch(() => {})
-      setSound(false)
-      return
-    }
+  async function toggleEffects() {
+    if (typeof AudioContext === 'undefined') return
     try {
-      if (!music.current) {
-        const track = new Audio('/wedding/selepas-senja.wav')
-        track.loop = true
-        track.volume = volume
-        music.current = track
+      const system = audio.current ?? createGardenAudio()
+      audio.current = system
+      if (effects) {
+        await system.context.suspend()
+      } else {
+        await system.context.resume()
       }
-      const playing = music.current.play()
-      if (!audio.current && typeof AudioContext !== 'undefined') {
-        const context = new AudioContext()
-        const base = context.createGain()
-        base.gain.value = volume * 0.3
-        base.connect(context.destination)
-        audio.current = { context, base }
-      }
-      void audio.current?.context.resume().catch(() => {})
-      await playing
-      setSound(true)
-      setSoundUnavailable(false)
+      setEffects(system.context.state === 'running')
     } catch {
-      setSoundUnavailable(true)
-      setSound(false)
+      setEffects(false)
     }
-  }
-
-  function changeVolume(next: number) {
-    setVolume(next)
-    if (music.current) music.current.volume = next
-    if (audio.current) audio.current.base.gain.value = next * 0.3
   }
 
   useEffect(() => {
@@ -140,13 +99,16 @@ export function WeddingGarden({
           host.current,
           initialPlaces.current,
           setNear,
-          (count) => {
-            setLights(count)
-            chime(440 * 2 ** (count / 7))
-          },
+          setLights,
           initialAlbum.current,
           setSelected,
-          { map, character, event: initialEvent.current, onSwim: setSwimming },
+          {
+            map,
+            character,
+            event: initialEvent.current,
+            onSwim: setSwimming,
+            onSound: (sound) => audio.current?.play(sound),
+          },
         )
         setReady(true)
       })
@@ -156,14 +118,12 @@ export function WeddingGarden({
       controller.current?.dispose()
       controller.current = null
     }
-  }, [chime, map, character])
+  }, [map, character])
 
   useEffect(
     () => () => {
       if (audio.current) void audio.current.context.close()
       audio.current = null
-      music.current?.pause()
-      music.current = null
     },
     [],
   )
@@ -182,12 +142,11 @@ export function WeddingGarden({
         resetJoystick()
         setStation(id)
         controller.current?.setStation(id)
-        chime(659.25)
         return
       }
       onVisit(id)
     },
-    [album, event, rsvp, chime, onVisit, resetJoystick],
+    [album, event, rsvp, onVisit, resetJoystick],
   )
 
   function closeStation() {
@@ -245,27 +204,10 @@ export function WeddingGarden({
             Berenang
           </p>
         )}
-        <button type="button" aria-label="Suara taman" aria-pressed={sound} onClick={() => void toggleSound()}>
-          {sound ? 'Jeda musik' : 'Nyalakan musik'}
+        {soundtrack}
+        <button className="garden-effects" type="button" aria-pressed={effects} onClick={() => void toggleEffects()}>
+          {effects ? 'Matikan efek suara' : 'Nyalakan efek suara'}
         </button>
-        {sound && (
-          <label className="garden-volume">
-            Volume musik
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={volume}
-              onChange={(event) => changeVolume(event.target.valueAsNumber)}
-            />
-          </label>
-        )}
-        {soundUnavailable && (
-          <span className="garden-audio-error" role="status">
-            Musik belum bisa diputar. Coba nyalakan lagi.
-          </span>
-        )}
         {!station && (
           <details className="garden-picker">
             <summary>Peta dan karakter</summary>
@@ -321,7 +263,6 @@ export function WeddingGarden({
           </button>
         )}
       </div>
-      {accountAction && <div className="garden-account">{accountAction}</div>}
       {ready && !station && (
         <button
           className="garden-joystick"

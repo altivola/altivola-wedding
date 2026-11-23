@@ -1,6 +1,6 @@
 # Altivola Wedding
 
-Create a wedding invitation without signing in, publish a separate link for each guest, and collect RSVPs. This project uses the Altivola starter.
+Browse wedding invitation examples without signing in. In the Studio, create an invitation, publish a separate link for each guest, and collect RSVPs. This project uses the Altivola starter.
 
 ## What's inside
 
@@ -31,16 +31,35 @@ Open http://localhost:5173. Enter the event details and one guest per line, publ
 
 If port 5432 is already taken, set `DB_PORT` in `.env` and use the same port in `DATABASE_URL`.
 
+## Invitation music
+
+Select **Musik** in the Studio to preview recordings or search the CC0 recordings
+from Freesound via Openverse. Guests listen directly in the invitation without
+a music service account. New drafts start muted.
+
+- _Gymnopédie No. 1_ by Erik Satie, [recording by Teknopazzo](https://commons.wikimedia.org/wiki/File:Gymnopedie_No._1..ogg), CC0.
+- _Can't Take Our Love Away_ by [Josh Woodward](https://freemusicarchive.org/music/Josh_Woodward/Crawford_Street/JoshWoodward-CrawfordStreet-03-CantTakeOurLoveAway/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- _Thinking of You_ by [Kevin MacLeod](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100637), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 ## Studio sign-in
 
-To enable the optional Studio login, register the Wedding callback with Altivola
+To enable Studio sign-in, register the Wedding callback with Altivola
 Auth and set the three `ALTIVOLA_AUTH_*` variables in the API environment. For
 the configured production origin, the callback is
 `https://wedding.altivola.workers.dev/api/auth/callback/altivola`.
 
-The Studio shows **Masuk** before the user starts an unsaved draft. The login
-screen offers Google and GitHub through Altivola Auth. Guest invitation and
-RSVP links are public, and publishing still works anonymously.
+Creators sign in before they can enter the Studio or publish an invitation.
+The login screen offers Google and GitHub through Altivola Auth. The homepage,
+examples, guest invitations, and RSVP links are public.
+
+The Studio has fourteen invitation designs. These include a walkable 3D garden,
+an illustrated town, a tunable radio, a photo darkroom, a rain-covered window,
+a matching game, a scroll journey, an exhibition map, and a rainy cinema.
+The cinema uses live WebGL lighting and ripples with a CSS fallback. Its lobby
+poster and auditorium screen show the couple's actual invitation content. Guests
+can change the reel and ring the usher's bell to open RSVP.
+Creators can reorder sections, change their styles, and add titled text sections.
+In the 3D garden, guests can turn movement effects on independently from the soundtrack.
 
 ## Deployment status
 

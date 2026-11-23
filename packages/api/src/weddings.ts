@@ -2,8 +2,18 @@ import { Buffer } from 'node:buffer'
 import type { Sql } from '@app/db'
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
-import { pub } from './context.ts'
-import { gardenCharacters, gardenMaps, studioSections, type WeddingDesign, weddingSections } from './wedding-design.ts'
+import { authed, pub } from './context.ts'
+import { invitationMusic, musicSelection, resolveMusic } from './music.ts'
+import {
+  gardenCharacters,
+  gardenMaps,
+  maxScheduleItems,
+  studioSections,
+  type WeddingDesign,
+  weddingFlows,
+  weddingSections,
+  weddingTemplates,
+} from './wedding-design.ts'
 
 const sectionStyle = z.object({
   title: z.string().max(120).optional(),
@@ -41,7 +51,19 @@ const designSchema: z.ZodType<WeddingDesign> = z.object({
     ),
   note: z.string().max(2000),
   album: z.enum(['grid', 'filmstrip', 'stack']).optional(),
-  flow: z.enum(['rooms', 'page']).optional(),
+  template: z.enum(weddingTemplates).optional(),
+  schedule: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(40),
+        time: z.string().max(60),
+        title: z.string().max(120),
+        detail: z.string().max(280),
+      }),
+    )
+    .max(maxScheduleItems)
+    .optional(),
+  flow: z.enum(weddingFlows).optional(),
   accent: z.enum(['gold', 'lavender', 'fern']).optional(),
   gardenMap: z.enum(gardenMaps).optional(),
   gardenCharacter: z.enum(gardenCharacters).optional(),
@@ -71,8 +93,9 @@ const Content = z.object({
   date: z.string().trim().min(1).max(120),
   venue: z.string().trim().min(1).max(200),
   story: z.string().trim().max(5000),
-  theme: z.enum(['garden', 'night', 'print']),
+  theme: z.enum(weddingTemplates),
   design: designSchema.optional(),
+  music: invitationMusic.optional(),
   photos: z.array(storedPhoto).max(9).optional(),
 })
 
@@ -118,11 +141,11 @@ export async function saveRsvp(sql: Sql, weddingId: string, guestId: string, att
 }
 
 export const weddings = {
-  publish: pub
+  publish: authed
     .route({ method: 'POST', path: '/weddings', summary: 'Publish an invitation' })
     .input(
       z.object({
-        content: Content.omit({ photos: true }),
+        content: Content.omit({ photos: true, music: true }).extend({ music: musicSelection.optional() }),
         guests: z.array(z.string().trim().min(1).max(100)).min(1).max(500),
         photos: z
           .array(uploadedPhoto)
@@ -138,7 +161,10 @@ export const weddings = {
     )
     .output(z.object({ id: z.uuid(), guests: z.array(GuestLink) }))
     .handler(async ({ input, context }) => {
-      if (!input.photos?.length) return publishWedding(context.sql, input.content, input.guests)
+      const { music: selection, ...details } = input.content
+      const music = await resolveMusic(selection)
+      const content = { ...details, ...(music === undefined ? {} : { music }) }
+      if (!input.photos?.length) return publishWedding(context.sql, content, input.guests)
       if (!context.media) throw new ORPCError('SERVICE_UNAVAILABLE')
       const media = context.media
       const id = crypto.randomUUID()
@@ -157,7 +183,7 @@ export const weddings = {
         }
         return await publishWedding(
           context.sql,
-          { ...input.content, photos: photos.map(({ photo }) => photo) },
+          { ...content, photos: photos.map(({ photo }) => photo) },
           input.guests,
           id,
         )

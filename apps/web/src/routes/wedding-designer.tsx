@@ -1,4 +1,6 @@
+import type { InvitationMusic } from '@app/api/music'
 import {
+  customWeddingSections,
   defaultWeddingDesign,
   gardenCharacters,
   gardenMaps,
@@ -6,30 +8,56 @@ import {
   type StudioSection,
   type WeddingDesign,
   type WeddingSection,
+  weddingFlows,
   weddingSections,
 } from '@app/api/wedding-design'
-import { ArrowDown, ArrowUp, GripVertical, Move } from 'lucide-react'
-import { type CSSProperties, type PointerEvent, type ReactNode, useRef, useState } from 'react'
-import { type Theme, themes } from './wedding-gallery'
+import { ArrowDown, ArrowUp, GripVertical, Move, X } from 'lucide-react'
+import { type CSSProperties, lazy, type PointerEvent, type ReactNode, Suspense, useRef, useState } from 'react'
+import { ExperienceNav, ExperienceOpening, InvitationTown, ReplayOpening } from './wedding-experiences'
+import { applyTemplate, type Theme, themes } from './wedding-gallery'
 import { gardenCharacterNames, gardenMapNames } from './wedding-garden-options'
 import { WeddingGarden } from './wedding-garden-view'
 import { sectionTitles, studioLabels } from './wedding-inspector'
+import { songDetails, useMusicPlayer } from './wedding-music'
 import { WeddingSceneView } from './wedding-scene-view'
+import { moveScene, sceneSurface, touchScene } from './wedding-scenography'
+import { InvitationEnvelope, InvitationSchedule, KeepsakeGallery } from './wedding-template-features'
 
-const sectionLabels: Record<WeddingSection, string> = {
-  story: 'Cerita pasangan',
-  event: 'Jadwal dan lokasi',
-  album: 'Album foto',
-  note: 'Pesan tambahan',
-  rsvp: 'RSVP',
+const CinemaInvitation = lazy(() =>
+  import('./wedding-cinema-invitation').then(({ CinemaInvitation }) => ({ default: CinemaInvitation })),
+)
+
+function sectionLabel(design: WeddingDesign, section: StudioSection) {
+  return design.sectionStyles?.[section]?.title?.trim() || studioLabels[section]
 }
+
 const placement = (number: number) => Math.min(100, Math.max(0, Math.round(number)))
 
 type DesignProps = { design: WeddingDesign; onChange: (design: WeddingDesign) => void }
 
-export function DesignControls({ design, onChange }: DesignProps) {
+export function DesignControls({
+  design,
+  onChange,
+  onEditSection,
+}: DesignProps & { onEditSection: (section: WeddingSection) => void }) {
   const dragStart = useRef<{ source: WeddingSection; y: number } | null>(null)
   const [target, setTarget] = useState<WeddingSection | null>(null)
+
+  const nextCustomSection = customWeddingSections.find((section) => !design.sections.includes(section))
+
+  function addSection() {
+    if (!nextCustomSection) return
+    const sections = [...design.sections]
+    sections.splice(sections.indexOf('rsvp'), 0, nextCustomSection)
+    onChange({ ...design, sections })
+    onEditSection(nextCustomSection)
+  }
+
+  function removeSection(section: WeddingSection) {
+    const sectionStyles = { ...design.sectionStyles }
+    delete sectionStyles[section]
+    onChange({ ...design, sectionStyles, sections: design.sections.filter((item) => item !== section) })
+  }
 
   function reorder(source: WeddingSection, destination: WeddingSection) {
     if (source === destination) return
@@ -117,9 +145,13 @@ export function DesignControls({ design, onChange }: DesignProps) {
           Alur tamu
           <select
             value={design.flow ?? 'rooms'}
-            onChange={(e) => onChange({ ...design, flow: e.target.value === 'page' ? 'page' : 'rooms' })}
+            onChange={(e) => {
+              const flow = weddingFlows.find((value) => value === e.target.value)
+              if (flow) onChange({ ...design, flow })
+            }}
           >
             <option value="rooms">Jelajah ruang</option>
+            <option value="chapters">Per bab</option>
             <option value="page">Satu halaman</option>
           </select>
         </label>
@@ -152,7 +184,7 @@ export function DesignControls({ design, onChange }: DesignProps) {
           </select>
         </label>
       </div>
-      {design.flow !== 'page' && (
+      {(design.flow ?? 'rooms') === 'rooms' && (
         <div className="design-options">
           <label>
             Peta taman
@@ -194,13 +226,15 @@ export function DesignControls({ design, onChange }: DesignProps) {
         {design.sections.map((item, index) => {
           const previous = design.sections[index - 1]
           const next = design.sections[index + 1]
+          const label = sectionLabel(design, item)
+          const custom = item.startsWith('custom-')
           return (
-            <li key={item} data-wedding-section={item} data-drop-target={target === item}>
+            <li key={item} data-wedding-section={item} data-drop-target={target === item} data-custom={custom}>
               <button
                 className="design-grip"
                 type="button"
                 tabIndex={-1}
-                aria-label={`Geser ${sectionLabels[item]}`}
+                aria-label={`Geser ${label}`}
                 onPointerDown={(event) => {
                   if (!event.isPrimary || event.button !== 0) return
                   dragStart.current = { source: item, y: event.clientY }
@@ -225,11 +259,13 @@ export function DesignControls({ design, onChange }: DesignProps) {
               >
                 <GripVertical size={18} />
               </button>
-              <span>{sectionLabels[item]}</span>
+              <button className="design-section-edit" type="button" onClick={() => onEditSection(item)}>
+                {label}
+              </button>
               <button
                 type="button"
                 disabled={!previous}
-                aria-label={`Naikkan ${sectionLabels[item]}`}
+                aria-label={`Naikkan ${label}`}
                 onClick={() => previous && reorder(item, previous)}
               >
                 <ArrowUp size={16} />
@@ -237,15 +273,23 @@ export function DesignControls({ design, onChange }: DesignProps) {
               <button
                 type="button"
                 disabled={!next}
-                aria-label={`Turunkan ${sectionLabels[item]}`}
+                aria-label={`Turunkan ${label}`}
                 onClick={() => next && reorder(item, next)}
               >
                 <ArrowDown size={16} />
               </button>
+              {custom && (
+                <button type="button" aria-label={`Hapus ${label}`} onClick={() => removeSection(item)}>
+                  <X size={16} />
+                </button>
+              )}
             </li>
           )
         })}
       </ol>
+      <button type="button" className="design-add" disabled={!nextCustomSection} onClick={addSection}>
+        Tambah bagian
+      </button>
       {(['story', 'album', 'note'] as const).map((section) => (
         <label className="design-toggle" key={section}>
           <input
@@ -258,7 +302,7 @@ export function DesignControls({ design, onChange }: DesignProps) {
               onChange({ ...design, sections })
             }}
           />
-          Tampilkan {sectionLabels[section].toLowerCase()}
+          Tampilkan {studioLabels[section].toLowerCase()}
         </label>
       ))}
       {design.sections.includes('note') && (
@@ -271,7 +315,17 @@ export function DesignControls({ design, onChange }: DesignProps) {
           />
         </label>
       )}
-      <button type="button" className="design-reset" onClick={() => onChange(defaultWeddingDesign)}>
+      <button
+        type="button"
+        className="design-reset"
+        onClick={() => {
+          const { x, y, type, palette, cover, album, flow } = applyTemplate(
+            defaultWeddingDesign,
+            design.template ?? 'garden',
+          )
+          onChange({ ...design, x, y, type, palette, cover, album, flow })
+        }}
+      >
         Reset komposisi
       </button>
     </div>
@@ -285,6 +339,7 @@ type DesignedContent = {
   venue: string
   story: string
   design?: WeddingDesign
+  music?: InvitationMusic
 }
 
 export function DesignedInvitation({
@@ -309,9 +364,38 @@ export function DesignedInvitation({
   journey?: boolean
 }) {
   const cover = useRef<HTMLDivElement>(null)
+  const chapterHeading = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
   const design = content.design ?? defaultWeddingDesign
+  const song = editing ? null : songDetails(content.music)
+  const player = useMusicPlayer(true, song?.src)
+  const soundControls = song && (
+    <div className="invitation-soundtrack">
+      <button type="button" aria-pressed={player.playing === song.src} onClick={() => void player.toggle(song.src)}>
+        {player.playing === song.src ? 'Jeda musik' : 'Putar musik'}
+      </button>
+      <span>{song.title}</span>
+      <a href={song.source} target="_blank" rel="noreferrer">
+        {song.artist || 'Freesound'} · {song.kind === 'recording' ? song.license : 'CC0'}
+      </a>
+      {player.playing === song.src && (
+        <label>
+          Volume
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={player.volume}
+            onChange={(event) => player.changeVolume(event.target.valueAsNumber)}
+          />
+        </label>
+      )}
+      {player.unavailable && <span role="status">Musik belum bisa diputar.</span>}
+    </div>
+  )
   const [exploring, setExploring] = useState(false)
+  const [openingComplete, setOpeningComplete] = useState(false)
   const [room, setRoom] = useState<WeddingSection | 'cover'>('cover')
   const backgroundImage = photos.find((photo) => photo.background)?.src
   const albumPhotos = photos.filter((photo) => !photo.background)
@@ -330,14 +414,38 @@ export function DesignedInvitation({
   function selectRoom(next: StudioSection) {
     setRoom(next)
     editing?.onSelect?.(next)
+    if ((isChapters || isExhibit || isTown) && !editing) {
+      requestAnimationFrame(() => {
+        const target =
+          next === 'cover' ? (isTown ? document.getElementById('wedding-town') : cover.current) : chapterHeading.current
+        target?.focus()
+      })
+    }
   }
   const position = roomOrder.indexOf(activeRoom)
-  const isJourney = journey && (editing ? design.flow !== 'page' : content.design?.flow === 'rooms')
+  const isJourney = journey && (editing ? (design.flow ?? 'rooms') === 'rooms' : content.design?.flow === 'rooms')
+  const isChapters = journey && design.flow === 'chapters'
+  const isEditorial = !isJourney && !isChapters && design.template === 'print'
+  const isWeekend = !isJourney && !isChapters && design.template === 'weekend'
+  const isKeepsake = !isJourney && !isChapters && design.template === 'keepsake'
+  const isLetter = design.template === 'letter'
+  const experience = !isJourney && !isChapters ? design.template : undefined
+  const isExhibit = experience === 'exhibit'
+  const isTown = experience === 'town' && !editing
+  const scenicNav = experience === 'lantern' || experience === 'radio'
+  const opening =
+    experience === 'radio' || experience === 'darkroom' || experience === 'rain' || experience === 'puzzle'
+      ? experience
+      : undefined
+  const paged = isJourney || isChapters || isExhibit || isTown
   const gardenPlaces = available.map((section) => ({
     id: section,
-    label: design.sectionStyles?.[section]?.title?.trim() || sectionLabels[section],
+    label: sectionLabel(design, section),
+    detail:
+      design.sectionStyles?.[section]?.lead ||
+      (section === 'story' ? content.story : section === 'note' ? design.note : undefined),
   }))
-  if (isJourney && exploring)
+  if (isJourney && !editing && exploring)
     return (
       <WeddingGarden
         places={gardenPlaces}
@@ -347,6 +455,7 @@ export function DesignedInvitation({
         event={{ date: content.date, venue: content.venue }}
         rsvp={rsvp}
         rsvpSaved={rsvpSaved}
+        soundtrack={soundControls}
         onExit={() => setExploring(false)}
         onVisit={(id) => {
           const room = available.find((section) => section === id)
@@ -359,6 +468,44 @@ export function DesignedInvitation({
     )
   const coverStyle = design.sectionStyles?.cover
   const personalized = (value: string) => value.replaceAll('{tamu}', recipient)
+  function openInvitation() {
+    setOpeningComplete(true)
+    requestAnimationFrame(() => cover.current?.focus())
+  }
+  if (isLetter && !editing && !openingComplete) {
+    return (
+      <div className="invitation-opening">
+        <InvitationEnvelope
+          recipient={recipient}
+          names={personalized(coverStyle?.title?.trim() || content.names)}
+          onOpen={openInvitation}
+        />
+        {soundControls}
+      </div>
+    )
+  }
+  if (opening && !editing && !openingComplete) {
+    return (
+      <div className="invitation-opening">
+        <ExperienceOpening
+          theme={opening}
+          names={personalized(coverStyle?.title?.trim() || content.names)}
+          recipient={recipient}
+          cover={coverImage}
+          photos={albumPhotos.map(({ src }) => src)}
+          onOpen={openInvitation}
+          onTune={
+            song
+              ? () => {
+                  void player.start(song.src)
+                }
+              : undefined
+          }
+        />
+        {soundControls}
+      </div>
+    )
+  }
   const label = (
     <>
       {coverStyle?.eyebrow && <p className="studio-eyebrow">{coverStyle.eyebrow}</p>}
@@ -367,14 +514,115 @@ export function DesignedInvitation({
     </>
   )
 
+  function renderSection(section: WeddingSection) {
+    const style = design.sectionStyles?.[section]
+    const title = style?.title?.trim() || sectionTitles[section]
+    const scenery =
+      experience === 'lantern' && !editing ? (albumPhotos[available.indexOf(section)]?.src ?? coverImage) : undefined
+    return (
+      <section
+        className="designed-section studio-section"
+        key={section}
+        id={(isEditorial || isWeekend || isKeepsake || scenicNav) && !editing ? `bagian-${section}` : undefined}
+        ref={(isChapters || isExhibit || isTown) && !editing ? chapterHeading : undefined}
+        tabIndex={(isChapters || isExhibit || isTown) && !editing ? -1 : undefined}
+        data-section={section}
+        data-composition={style?.layout ?? 'stack'}
+        data-studio-font={style?.font}
+        data-inspected={editing?.section === section}
+        data-scene-surface={design.template ? sceneSurface(content.theme, section) : undefined}
+        data-reply={(section === 'rsvp' && rsvpSaved) || undefined}
+        onPointerMove={editing ? undefined : moveScene}
+        onPointerDown={editing ? undefined : touchScene}
+        style={{
+          ...sectionCss(style, design.sectionAlign?.[section] ?? 'center'),
+          ...(scenery && !style?.surface
+            ? {
+                backgroundImage: `linear-gradient(#112820b3,#182720ea), url("${scenery}")`,
+                color: style?.ink ?? '#fff7dd',
+              }
+            : {}),
+        }}
+        aria-label={sectionLabel(design, section)}
+      >
+        {editing?.onInspect && (
+          <button className="studio-select-overlay" type="button" onClick={() => editing.onInspect?.(section)}>
+            Edit {studioLabels[section].toLowerCase()}
+          </button>
+        )}
+        {(style?.eyebrow || title || style?.lead) && (
+          <div className="studio-section-heading">
+            {style?.eyebrow && <p className="studio-eyebrow">{style.eyebrow}</p>}
+            {title && <h3>{title}</h3>}
+            {style?.lead && <p>{style.lead}</p>}
+          </div>
+        )}
+        <div className="studio-section-body">
+          {section === 'story' && <p>{content.story || (editing ? 'Tulis cerita pasangan di Studio.' : '')}</p>}
+          {section === 'event' && (
+            <>
+              <p>{content.date || 'Tanggal acara'}</p>
+              <p>{content.venue || 'Lokasi acara'}</p>
+              {design.schedule && <InvitationSchedule items={design.schedule} />}
+            </>
+          )}
+          {section === 'album' &&
+            (albumPhotos.length > 0 ? (
+              <KeepsakeGallery photos={albumPhotos} layout={design.album} />
+            ) : (
+              editing && <p>Upload foto dari ruang Album.</p>
+            ))}
+          {section === 'note' && <p>{design.note}</p>}
+          {section === 'rsvp' && rsvp}
+        </div>
+      </section>
+    )
+  }
+
+  if (design.template === 'cinema' && !editing) {
+    return (
+      <Suspense fallback={<p role="status">Membuka bioskop…</p>}>
+        <CinemaInvitation
+          names={personalized(coverStyle?.title?.trim() || content.names)}
+          recipient={personalized(coverStyle?.lead?.trim() || 'Untuk {tamu}')}
+          date={content.date}
+          venue={content.venue}
+          eventTitle={design.sectionStyles?.event?.title?.trim() || 'Akad & Resepsi'}
+          eventLead={design.sectionStyles?.event?.lead}
+          rsvpTitle={design.sectionStyles?.rsvp?.title?.trim() || 'Konfirmasi hadir'}
+          rsvpLead={design.sectionStyles?.rsvp?.lead}
+          rsvp={rsvp}
+          rsvpSaved={rsvpSaved}
+          music={soundControls}
+          story={content.story}
+          photos={albumPhotos}
+          leadPhoto={albumPhotos.find((photo) => photo.cover)?.src ?? albumPhotos[0]?.src}
+          sections={available
+            .filter((section) => section !== 'rsvp')
+            .map((section) => ({
+              id: section,
+              title: sectionLabel(design, section),
+              details: renderSection(section),
+              text: design.sectionStyles?.[section]?.lead || (section === 'note' ? design.note : undefined),
+            }))}
+        />
+      </Suspense>
+    )
+  }
+
   return (
     <article
       className="wedding-card designed-invitation"
       data-theme={content.theme}
+      data-template={design.template}
+      data-chapters={isChapters}
+      data-editorial={isEditorial}
+      data-experience={experience}
       data-style={design.palette}
       data-type={design.type}
       data-accent={design.accent ?? 'gold'}
       data-journey={isJourney}
+      data-scene-world={design.template && !editing ? content.theme : undefined}
       data-custom-background={Boolean(backgroundImage)}
       style={
         backgroundImage
@@ -404,11 +652,30 @@ export function DesignedInvitation({
           }
         />
       )}
+      {soundControls}
+      {opening && !editing && (
+        <ReplayOpening
+          onReplay={() => {
+            setOpeningComplete(false)
+            window.scrollTo(0, 0)
+          }}
+        />
+      )}
+      {(isExhibit || isTown) && (
+        <ExperienceNav
+          theme={isTown ? 'town' : 'exhibit'}
+          stops={[{ id: 'cover', label: 'Pintu masuk' }, ...gardenPlaces]}
+          active={activeRoom}
+          onSelect={selectRoom}
+        />
+      )}
       {isJourney && (
         <nav className="guest-room-map" aria-label="Peta undangan">
-          <button type="button" onClick={() => setExploring(true)}>
-            Jelajah taman
-          </button>
+          {!editing && (
+            <button type="button" onClick={() => setExploring(true)}>
+              Jelajah taman
+            </button>
+          )}
           {roomOrder.map((section) => (
             <button
               key={section}
@@ -416,16 +683,21 @@ export function DesignedInvitation({
               aria-current={section === activeRoom ? 'step' : undefined}
               onClick={() => selectRoom(section)}
             >
-              {section === 'cover' ? 'Pintu masuk' : sectionLabels[section]}
+              {section === 'cover' ? 'Pintu masuk' : sectionLabel(design, section)}
             </button>
           ))}
         </nav>
       )}
+      {isTown && <InvitationTown stops={gardenPlaces} onSelect={selectRoom} />}
       <div
-        hidden={isJourney && activeRoom !== 'cover'}
+        hidden={paged && activeRoom !== 'cover'}
         ref={cover}
+        tabIndex={(isChapters || isLetter || isExhibit || opening) && !editing ? -1 : undefined}
         className="designed-cover"
         data-cover={design.cover}
+        data-scene-surface={design.template ? sceneSurface(content.theme, 'cover') : undefined}
+        onPointerMove={editing ? undefined : moveScene}
+        onPointerDown={editing ? undefined : touchScene}
       >
         <img alt="" src={coverImage} />
         <div className="design-plane">
@@ -491,60 +763,29 @@ export function DesignedInvitation({
           </div>
         </div>
       </div>
-      {available.map((section) => {
-        if (isJourney && activeRoom !== section) return null
-        const style = design.sectionStyles?.[section]
-        const title = style?.title?.trim() || sectionTitles[section]
-        return (
-          <section
-            className="designed-section studio-section"
-            key={section}
-            data-section={section}
-            data-composition={style?.layout ?? 'stack'}
-            data-studio-font={style?.font}
-            data-inspected={editing?.section === section}
-            style={sectionCss(style, design.sectionAlign?.[section] ?? 'center')}
-            aria-label={sectionLabels[section]}
-          >
-            {editing?.onInspect && (
-              <button className="studio-select-overlay" type="button" onClick={() => editing.onInspect?.(section)}>
-                Edit {studioLabels[section].toLowerCase()}
-              </button>
-            )}
-            {(style?.eyebrow || title || style?.lead) && (
-              <div className="studio-section-heading">
-                {style?.eyebrow && <p className="studio-eyebrow">{style.eyebrow}</p>}
-                {title && <h3>{title}</h3>}
-                {style?.lead && <p>{style.lead}</p>}
-              </div>
-            )}
-            <div className="studio-section-body">
-              {section === 'story' && <p>{content.story || (editing ? 'Tulis cerita pasangan di Studio.' : '')}</p>}
-              {section === 'event' && (
-                <>
-                  <p>{content.date || 'Tanggal acara'}</p>
-                  <p>{content.venue || 'Lokasi acara'}</p>
-                </>
-              )}
-              {section === 'album' && (
-                <div className="guest-photo-gallery" data-layout={design.album ?? 'grid'}>
-                  {albumPhotos.map((photo) => (
-                    <figure key={photo.src}>
-                      <img src={photo.src} alt={photo.caption || 'Foto pasangan'} loading="lazy" />
-                      {photo.caption && <figcaption>{photo.caption}</figcaption>}
-                    </figure>
-                  ))}
-                  {editing && !albumPhotos.length && <p>Upload foto dari ruang Album.</p>}
-                </div>
-              )}
-              {section === 'note' && <p>{design.note}</p>}
-              {section === 'rsvp' && rsvp}
-            </div>
-          </section>
-        )
-      })}
-      {isJourney && (
-        <footer className="guest-room-actions">
+      {isKeepsake && !editing && albumPhotos.length > 0 && available.includes('album') && (
+        <a className="keepsake-jump" href="#bagian-album">
+          Buka album
+        </a>
+      )}
+      {scenicNav && !editing && <ExperienceNav theme={experience} stops={gardenPlaces} onSelect={selectRoom} />}
+      {(isEditorial || isWeekend) && !editing && (
+        <nav className="invitation-contents" aria-label="Daftar isi">
+          {available.map((section) => (
+            <a key={section} href={`#bagian-${section}`}>
+              {sectionLabel(design, section)}
+            </a>
+          ))}
+        </nav>
+      )}
+      <div className="invitation-sections">
+        {available.filter((section) => !paged || activeRoom === section).map(renderSection)}
+      </div>
+      {paged && !isExhibit && !isTown && (
+        <footer className={isChapters ? 'invitation-chapter-actions' : 'guest-room-actions'}>
+          {isChapters && (
+            <p aria-live="polite">{position === 0 ? 'Sampul' : `Bab ${position} dari ${roomOrder.length - 1}`}</p>
+          )}
           {position > 0 && (
             <button type="button" onClick={() => selectRoom(roomOrder[position - 1] ?? 'cover')}>
               Kembali
@@ -552,7 +793,7 @@ export function DesignedInvitation({
           )}
           {position < roomOrder.length - 1 && (
             <button type="button" onClick={() => selectRoom(roomOrder[position + 1] ?? 'cover')}>
-              Lanjut jelajah
+              {isChapters ? (position === 0 ? 'Buka undangan' : 'Bab berikutnya') : 'Lanjut jelajah'}
             </button>
           )}
         </footer>

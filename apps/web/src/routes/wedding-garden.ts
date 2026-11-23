@@ -28,11 +28,12 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three'
+import type { GardenSound } from './wedding-garden-audio'
 
 export type GardenStation = 'album' | 'event' | 'rsvp'
 export type AlbumCamera = { view: 'overview' | 'eye'; zoom: number; angle: number }
 export type GardenPhoto = { src: string; caption: string }
-export type GardenPlace = { id: string; label: string }
+export type GardenPlace = { id: string; label: string; detail?: string }
 const landscapes = {
   twilight: {
     sky: '#1a273c',
@@ -130,6 +131,7 @@ export type GardenOptions = {
   character: GardenCharacter
   event?: { date: string; venue: string }
   onSwim?: (swimming: boolean) => void
+  onSound?: (sound: GardenSound) => void
 }
 const seedSites = [
   [-4, -4],
@@ -366,7 +368,10 @@ export function mountGarden(
     sprite.scale.set(3.4, 0.85, 1)
     landmark.add(sprite)
   }
-  const destinations = places.slice(0, sites.length).map((place, index) => {
+  const landmarkPlaces = places
+    .filter((place) => !place.id.startsWith('custom-'))
+    .concat(places.filter((place) => place.id.startsWith('custom-')))
+  const destinations = landmarkPlaces.slice(0, sites.length).map((place, index) => {
     const [x, z] = sites[index] ?? sites[0]
     const mat = paints[index] ?? ground
     mesh(scene, disc, path, x, 0.079, z, 2.45, 0.16, 2.45)
@@ -434,6 +439,15 @@ export function mountGarden(
         context.fillText(i === 3 && rows.length > 4 ? `${row}…` : row, 384, 154 + i * 51, 672)
       texture.needsUpdate = true
     }
+  }
+  for (const place of destinations) {
+    if (!place.detail || ['event', 'rsvp', 'album'].includes(place.id)) continue
+    const board = new Group()
+    board.position.set(place.x, 0, place.z + 0.75)
+    scene.add(board)
+    for (const x of [-1.25, 1.25]) mesh(board, cube, wood, x, 0.92, 0, 0.13, 1.85, 0.18)
+    mesh(board, cube, wood, 0, 1.8, 0, 3.33, 1.71, 0.17)
+    plaque(board, place.label, 0, 1.8, 0.09, 3.2)?.([place.detail])
   }
   const eventPlace = destinations.find((place) => place.id === 'event')
   const rsvpPlace = destinations.find((place) => place.id === 'rsvp')
@@ -597,6 +611,7 @@ export function mountGarden(
     return ripple
   })
   let swimming = false
+  let soundDistance = 0
   const shadow = mesh(scene, disc, edge, 0, 0.035, 5, 0.52, 0.035, 0.37)
   const target = new Vector3()
   const raycaster = new Raycaster()
@@ -699,6 +714,7 @@ export function mountGarden(
     }
     const speed = Math.hypot(x, z)
     const moving = speed > 0.01
+    let traveled = 0
     if (moving) {
       const travel = delta * (swimming ? 3.4 : 5.9) * (walkingTo ? 1 : Math.min(speed, 1))
       const dx = (x / speed) * travel
@@ -707,7 +723,8 @@ export function mountGarden(
       const beforeZ = p.z
       if (!blocked(p.x + dx, p.z)) p.x += dx
       if (!blocked(p.x, p.z + dz)) p.z += dz
-      if (walkingTo && p.x === beforeX && p.z === beforeZ) {
+      traveled = Math.hypot(p.x - beforeX, p.z - beforeZ)
+      if (walkingTo && traveled === 0) {
         walkingTo = null
         landing.visible = false
       }
@@ -717,6 +734,14 @@ export function mountGarden(
     if (swimming !== (surface !== null)) {
       swimming = surface !== null
       options.onSwim?.(swimming)
+      if (traveled > 0) options.onSound?.('splash')
+      soundDistance = 0
+    } else if (traveled > 0) {
+      soundDistance += traveled
+      if (soundDistance >= (swimming ? 1.75 : 1.5)) {
+        options.onSound?.(swimming ? 'stroke' : 'step')
+        soundDistance = 0
+      }
     }
     const waterMotion = reduced.matches ? 0 : Math.sin(now * 0.008)
     const pitch = swimming && moving ? 0.86 + waterMotion * 0.1 : 0

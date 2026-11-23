@@ -10,7 +10,7 @@ export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }
 
 function Layout() {
   const path = useRouterState({ select: (state) => state.location.pathname })
-  if (path === '/' || path.startsWith('/u/')) return <Outlet />
+  if (path === '/' || path === '/studio' || path === '/contoh' || path.startsWith('/u/')) return <Outlet />
   return <StarterLayout />
 }
 

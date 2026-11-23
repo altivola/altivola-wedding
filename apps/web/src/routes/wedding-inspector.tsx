@@ -1,4 +1,13 @@
-import type { SectionStyle, StudioSection, WeddingDesign } from '@app/api/wedding-design'
+import {
+  customWeddingSections,
+  type SectionStyle,
+  type StudioSection,
+  type WeddingDesign,
+} from '@app/api/wedding-design'
+
+const customLabels = Object.fromEntries(
+  customWeddingSections.map((id, index) => [id, `Bagian baru ${index + 1}`]),
+) as Record<(typeof customWeddingSections)[number], string>
 
 export const studioLabels: Record<StudioSection, string> = {
   cover: 'Sampul',
@@ -7,6 +16,7 @@ export const studioLabels: Record<StudioSection, string> = {
   album: 'Album foto',
   note: 'Pesan tambahan',
   rsvp: 'RSVP',
+  ...customLabels,
 }
 
 export const sectionTitles: Record<StudioSection, string> = {
@@ -16,6 +26,7 @@ export const sectionTitles: Record<StudioSection, string> = {
   album: 'Album kami',
   note: '',
   rsvp: 'Konfirmasi kehadiran',
+  ...customLabels,
 }
 
 const layouts = [
@@ -70,7 +81,7 @@ export function SectionInspector({
         />
       </label>
       <label>
-        {section === 'cover' ? 'Sapaan' : 'Teks pembuka'}
+        {section === 'cover' ? 'Sapaan' : section.startsWith('custom-') ? 'Isi bagian' : 'Teks pembuka'}
         <textarea
           maxLength={500}
           placeholder={section === 'cover' ? 'Yth. {tamu}' : 'Tulis pengantar bagian ini'}

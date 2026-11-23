@@ -1,25 +1,41 @@
+import type { InvitationMusic } from '@app/api/music'
 import { defaultWeddingDesign, type StudioSection, type WeddingDesign } from '@app/api/wedding-design'
 import { useQuery } from '@tanstack/react-query'
-import { createRoute, Link } from '@tanstack/react-router'
-import { useCallback, useReducer, useState } from 'react'
+import { createRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
+import { type ComponentProps, useCallback, useEffect, useReducer, useState } from 'react'
 import { authClient } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
 import { rootRoute } from './root'
 import { compress, type DraftPhoto, imageSource, WeddingAlbum } from './wedding-album'
 import { DesignControls, DesignedInvitation } from './wedding-designer'
-import { type Theme, themes, WeddingGallery } from './wedding-gallery'
-import { WeddingGarden } from './wedding-garden-view'
+import { applyTemplate, TemplateCards, type Theme, templateSearch, themes, WeddingGallery } from './wedding-gallery'
 import { SectionInspector, studioLabels } from './wedding-inspector'
-import { WeddingSceneView } from './wedding-scene-view'
+import { defaultWeddingMusic, WeddingMusicPicker } from './wedding-music'
+import { ScheduleEditor } from './wedding-template-features'
 import './wedding.css'
 import './wedding-journey.css'
 import './wedding-studio.css'
+import './wedding-templates.css'
+import './wedding-scenography.css'
+import './wedding-template-features.css'
+import './wedding-experiences.css'
 
 type Published = Awaited<ReturnType<typeof client.weddings.publish>>
 
 export const weddingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  component: WeddingLanding,
+})
+
+export const studioRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/studio',
+  validateSearch: templateSearch,
+  beforeLoad: async ({ search }) => {
+    const { data } = await authClient.getSession()
+    if (!data) throw redirect({ to: '/login', search })
+  },
   component: WeddingStudio,
 })
 
@@ -29,28 +45,61 @@ export const guestRoute = createRoute({
   component: GuestPage,
 })
 
-const workshopRooms = {
-  entry: 'Pintu masuk',
-  gallery: 'Galeri',
-  studio: 'Studio',
-  album: 'Album',
-  send: 'Ruang kirim',
-} as const
-type WorkshopRoom = keyof typeof workshopRooms
-const gardenPlaces = [
-  { id: 'gallery', label: 'Galeri' },
-  { id: 'album', label: 'Album' },
-  { id: 'studio', label: 'Studio' },
-  { id: 'send', label: 'Ruang kirim' },
-]
-const roomCamera: Record<WorkshopRoom, string> = {
-  entry: 'Sampul',
-  gallery: 'Album',
-  studio: 'Acara',
-  album: 'Album',
-  send: 'Sampul',
+export const exampleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/contoh',
+  validateSearch: templateSearch,
+  component: ExamplePage,
+})
+
+function WeddingLanding() {
+  return (
+    <main className="wedding-landing">
+      <header className="landing-header">
+        <Link className="wedding-brand" to="/">
+          hari bersama<span>.</span>
+        </Link>
+        <Link to="/studio">Masuk</Link>
+      </header>
+      <div className="landing-hero">
+        <div className="landing-copy">
+          <h1>
+            Satu hari.
+            <br />
+            <em>Banyak cerita.</em>
+          </h1>
+          <p>Bikin undangan pernikahan dengan cerita, foto, musik, dan link RSVP pribadi untuk setiap tamu.</p>
+          <div className="landing-actions">
+            <Link className="landing-create" to="/studio">
+              Buat undangan
+            </Link>
+            <a href="#contoh">Lihat contoh</a>
+          </div>
+        </div>
+        <figure>
+          <img
+            src="/wedding/garden.jpg"
+            alt="Ilustrasi taman pernikahan dari template Taman Kertas"
+            fetchPriority="high"
+          />
+        </figure>
+      </div>
+      <section id="contoh" className="landing-examples">
+        <h2>Contoh undangan</h2>
+        <TemplateCards />
+      </section>
+    </main>
+  )
 }
 
+const workshopRooms = {
+  studio: 'Studio',
+  gallery: 'Template',
+  album: 'Foto',
+  music: 'Musik',
+  send: 'Bagikan',
+} as const
+type WorkshopRoom = keyof typeof workshopRooms
 type DesignHistory = { past: WeddingDesign[]; present: WeddingDesign; future: WeddingDesign[] }
 type HistoryEdit = { type: 'update'; design: WeddingDesign } | { type: 'undo' } | { type: 'redo' }
 function changeDesign(history: DesignHistory, edit: HistoryEdit): DesignHistory {
@@ -68,8 +117,14 @@ function changeDesign(history: DesignHistory, edit: HistoryEdit): DesignHistory 
 }
 
 function WeddingStudio() {
-  const [room, setRoom] = useState<WorkshopRoom>('entry')
-  const [history, dispatchDesign] = useReducer(changeDesign, { past: [], present: defaultWeddingDesign, future: [] })
+  const [room, setRoom] = useState<WorkshopRoom>('studio')
+  const [showGuestPreview, setShowGuestPreview] = useState(false)
+  const preferredTemplate = studioRoute.useSearch().template ?? 'garden'
+  const [history, dispatchDesign] = useReducer(changeDesign, {
+    past: [],
+    present: applyTemplate(defaultWeddingDesign, preferredTemplate),
+    future: [],
+  })
   const design = history.present
   const setDesign = useCallback((value: WeddingDesign) => dispatchDesign({ type: 'update', design: value }), [])
   const [mobilePane, setMobilePane] = useState<'content' | 'preview' | 'design'>('content')
@@ -81,19 +136,18 @@ function WeddingStudio() {
     setStudioSection(next)
     setInspectorTab('section')
   }
-  const [theme, setTheme] = useState<Theme>('garden')
-  const [galleryChapter, setGalleryChapter] = useState('Sampul')
-  const explore = useCallback((selected: Theme, chapter: string) => {
-    setTheme(selected)
-    setGalleryChapter(chapter)
-  }, [])
+  const theme = design.template ?? 'garden'
+  const navigate = useNavigate()
   const { data: session } = authClient.useSession()
-  const providers = useQuery(orpc.authProviders.queryOptions())
+  function chooseTemplate(next: Theme) {
+    if (next !== theme) setDesign(applyTemplate(design, next))
+  }
   const [names, setNames] = useState('')
   const [date, setDate] = useState('')
   const [venue, setVenue] = useState('')
   const [story, setStory] = useState('')
   const [guests, setGuests] = useState('')
+  const [music, setMusic] = useState<InvitationMusic>(defaultWeddingMusic)
   const [photos, setPhotos] = useState<DraftPhoto[]>([])
   const [background, setBackground] = useState<DraftPhoto>()
   const [backgroundError, setBackgroundError] = useState('')
@@ -101,15 +155,11 @@ function WeddingStudio() {
   const [published, setPublished] = useState<Published>()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
-  const hasDraft = Boolean(
-    names || date || venue || story || guests || photos.length || background || history.past.length,
-  )
-  const canSignIn = !session && !hasDraft && !photosBusy && !pending && (providers.data?.includes('altivola') ?? false)
   const guestNames = guests
     .split('\n')
     .map((name) => name.trim())
     .filter(Boolean)
-  const preview = { names: names || 'Aruna & Dimas', date, venue, story, theme, design }
+  const preview = { names: names || 'Aruna & Dimas', date, venue, story, theme, design, music }
   const media = background ? [...photos, background] : photos
   const previewPhotos = media.map((photo) => ({
     src: imageSource(photo.jpeg),
@@ -146,75 +196,91 @@ function WeddingStudio() {
     try {
       setPublished(
         await client.weddings.publish({
-          content: { names, date, venue, story, theme, design },
+          content: {
+            names,
+            date,
+            venue,
+            story,
+            theme,
+            design,
+            music: music?.kind === 'openverse' ? { kind: music.kind, id: music.id } : music,
+          },
           guests: guestNames,
           photos: media.map(({ jpeg, caption, cover, background }) => ({ jpeg, caption, cover, background })),
         }),
       )
-    } catch {
-      setError('Undangan gagal diterbitkan. Cek koneksi dan isi formulir, lalu coba lagi.')
+    } catch (error) {
+      setError(
+        error instanceof Error && error.message === 'The selected song is unavailable'
+          ? 'Lagu yang dipilih sudah tidak tersedia. Pilih lagu lain di tab Musik.'
+          : 'Undangan gagal diterbitkan. Cek koneksi dan isi formulir, lalu coba lagi.',
+      )
     } finally {
       setPending(false)
     }
   }
 
-  const accountAction = canSignIn ? (
-    <Link className="workshop-sign-in" to="/login">
-      Masuk
-    </Link>
-  ) : session ? (
-    <button type="button" title={session.user.name || session.user.email} onClick={() => void authClient.signOut()}>
-      Keluar
-    </button>
-  ) : null
+  if (showGuestPreview) {
+    return (
+      <WeddingResultPreview
+        content={preview}
+        recipient={guestNames[0] || 'Tamu undangan'}
+        photos={previewPhotos}
+        onBack={() => {
+          setShowGuestPreview(false)
+          visit('studio')
+        }}
+      />
+    )
+  }
 
   return (
     <main className="wedding-studio wedding-workshop" data-workshop-room={room} data-workshop-theme={theme}>
-      {room !== 'entry' && (
-        <WeddingSceneView
-          image={`/wedding/${themes[theme].image}.jpg`}
-          theme={theme}
-          room={room}
-          chapter={room === 'gallery' ? galleryChapter : roomCamera[room]}
-        />
-      )}
-      {room !== 'entry' && (
-        <header className="workshop-header">
-          <button type="button" className="wedding-brand" onClick={() => visit('entry')}>
-            hari bersama<span>.</span>
-          </button>
-          <nav className="workshop-map" aria-label="Peta studio">
-            {(Object.keys(workshopRooms) as WorkshopRoom[]).map((item) => (
-              <button
-                key={item}
-                type="button"
-                aria-current={room === item ? 'step' : undefined}
-                disabled={photosBusy || pending}
-                onClick={() => visit(item)}
-              >
-                {workshopRooms[item]}
-              </button>
-            ))}
-            {accountAction}
-          </nav>
-        </header>
-      )}
+      <div
+        className="workshop-backdrop"
+        style={{ backgroundImage: `url("/wedding/${themes[theme].image}.jpg")` }}
+        aria-hidden="true"
+      />
+      <header className="workshop-header">
+        <button type="button" className="wedding-brand" onClick={() => visit('studio')}>
+          hari bersama<span>.</span>
+        </button>
+        <nav className="workshop-map" aria-label="Navigasi studio">
+          {(Object.keys(workshopRooms) as WorkshopRoom[]).map((item) => (
+            <button
+              key={item}
+              type="button"
+              aria-current={room === item ? 'step' : undefined}
+              disabled={photosBusy || pending}
+              onClick={() => visit(item)}
+            >
+              {workshopRooms[item]}
+            </button>
+          ))}
+          <Link className="workshop-link" to="/contoh" search={{ template: theme }} target="_blank" rel="noopener">
+            Contoh undangan
+          </Link>
+          {session && (
+            <button
+              type="button"
+              title={session.user.name || session.user.email}
+              disabled={photosBusy || pending}
+              onClick={async () => {
+                const { error } = await authClient.signOut()
+                if (!error) await navigate({ to: '/' })
+              }}
+            >
+              Keluar
+            </button>
+          )}
+        </nav>
+      </header>
       <div className="workshop-room" id="workshop-room" tabIndex={-1} key={room}>
-        {room === 'entry' && (
-          <WeddingGarden
-            places={gardenPlaces}
-            accountAction={accountAction}
-            onVisit={(id) => {
-              if (id === 'gallery' || id === 'studio' || id === 'album' || id === 'send') visit(id)
-            }}
-          />
-        )}
         {room === 'gallery' && (
           <WeddingGallery
             initialTheme={theme}
-            onExplore={explore}
             onChoose={(selected) => {
-              setTheme(selected)
+              chooseTemplate(selected)
               visit('studio')
             }}
           />
@@ -236,14 +302,19 @@ function WeddingStudio() {
             </nav>
             <div className="workshop-editor-grid" data-mobile-pane={mobilePane}>
               <div className="wedding-details journey-panel">
-                <h2>Studio</h2>
+                <div className="workshop-studio-title">
+                  <h2>Studio</h2>
+                  <button type="button" onClick={() => setShowGuestPreview(true)}>
+                    Lihat sebagai tamu
+                  </button>
+                </div>
                 <label>
                   Template
                   <select
                     value={theme}
                     onChange={(event) => {
-                      const value = event.currentTarget.value
-                      if (value === 'garden' || value === 'night' || value === 'print') setTheme(value)
+                      const { template } = templateSearch({ template: event.currentTarget.value })
+                      if (template) chooseTemplate(template)
                     }}
                   >
                     {Object.entries(themes).map(([key, item]) => (
@@ -269,12 +340,18 @@ function WeddingStudio() {
                   Cerita pasangan
                   <textarea maxLength={5000} value={story} onChange={(e) => setStory(e.target.value)} />
                 </label>
+                {(theme === 'weekend' || theme === 'lantern') && (
+                  <ScheduleEditor
+                    items={design.schedule ?? []}
+                    onChange={(schedule) => setDesign({ ...design, schedule })}
+                  />
+                )}
                 <div className="workshop-doors">
                   <button type="button" onClick={() => visit('album')}>
                     Atur foto
                   </button>
                   <button type="button" onClick={() => visit('send')}>
-                    Ke ruang kirim
+                    Lanjut ke Bagikan
                   </button>
                 </div>
               </div>
@@ -356,15 +433,18 @@ function WeddingStudio() {
                       >
                         {(['cover', ...design.sections] as const).map((item) => (
                           <option key={item} value={item}>
-                            {studioLabels[item]}
+                            {design.sectionStyles?.[item]?.title?.trim() || studioLabels[item]}
                           </option>
                         ))}
                       </select>
                     </label>
+                    <button type="button" onClick={() => setInspectorTab('theme')}>
+                      Atur urutan & tambah bagian
+                    </button>
                     <SectionInspector section={selectedSection} design={design} onChange={setDesign} />
                   </>
                 ) : (
-                  <DesignControls design={design} onChange={setDesign} />
+                  <DesignControls design={design} onChange={setDesign} onEditSection={inspectSection} />
                 )}
               </aside>
             </div>
@@ -423,9 +503,10 @@ function WeddingStudio() {
             />
           </div>
         )}
+        {room === 'music' && <WeddingMusicPicker theme={theme} value={music} onChange={setMusic} />}
         {room === 'send' && (
           <section className="wedding-links journey-panel">
-            <h2>Ruang kirim</h2>
+            <h2>Bagikan undangan</h2>
             <form
               onSubmit={(event) => {
                 event.preventDefault()
@@ -465,6 +546,107 @@ function WeddingStudio() {
           </section>
         )}
       </div>
+    </main>
+  )
+}
+
+const sampleInvite = {
+  names: 'Aruna & Dimas',
+  date: 'Minggu, 14 Februari 2027 · 16.00 WIB',
+  venue: 'Jakarta',
+  story:
+    'Kami berkenalan saat sama-sama berteduh dari hujan. Dari obrolan sore itu, kami mulai berbagi banyak hari bersama.',
+  design: {
+    ...defaultWeddingDesign,
+    sections: ['story', 'event', 'album', 'rsvp'],
+    gardenMap: 'twilight',
+  } satisfies WeddingDesign,
+}
+
+function ExamplePage() {
+  const theme = exampleRoute.useSearch().template ?? 'garden'
+  const design = applyTemplate(sampleInvite.design, theme)
+  if (theme === 'weekend' || theme === 'lantern') {
+    design.schedule = [
+      { id: 'akad', time: '16.00', title: 'Akad nikah', detail: 'Pendopo utama. Pintu dibuka pukul 15.30.' },
+      { id: 'reception', time: '18.00', title: 'Resepsi di taman', detail: 'Makan malam dan foto bersama.' },
+      { id: 'music', time: '20.00', title: 'Musik dan dansa', detail: 'Panggung di sisi timur taman.' },
+    ]
+  }
+  return (
+    <WeddingResultPreview
+      key={theme}
+      content={{
+        ...sampleInvite,
+        ...(theme === 'cinema' ? { names: 'Nara & Bima', venue: 'Bandung' } : {}),
+        theme,
+        design,
+        music: defaultWeddingMusic,
+      }}
+      recipient="Keluarga Ibu Ratna"
+      photos={
+        theme === 'cinema'
+          ? [{ src: '/wedding/bioskop-film.jpg', caption: 'Sepulang dari bioskop', cover: true }]
+          : [
+              { src: '/wedding/garden.jpg', caption: 'Ilustrasi taman', cover: false },
+              { src: '/wedding/cinema.jpg', caption: 'Ilustrasi suasana malam', cover: false },
+              ...(theme === 'darkroom'
+                ? [{ src: '/wedding/press.jpg', caption: 'Detail undangan', cover: false }]
+                : []),
+            ]
+      }
+    />
+  )
+}
+
+type PreviewProps = Pick<ComponentProps<typeof DesignedInvitation>, 'content' | 'recipient' | 'photos'> & {
+  onBack?: () => void
+}
+
+function WeddingResultPreview({ content, recipient, photos, onBack }: PreviewProps) {
+  const [answer, setAnswer] = useState<string>()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
+  return (
+    <main className="wedding-guest" data-cinema-preview={content.theme === 'cinema' || undefined}>
+      <header className="wedding-result-header">
+        <strong>{onBack ? 'Tampilan tamu' : 'Contoh undangan'}</strong>
+        {onBack ? (
+          <button type="button" onClick={onBack}>
+            Kembali ke Studio
+          </button>
+        ) : (
+          <nav className="example-actions" aria-label="Pilihan contoh">
+            <Link to="/" hash="contoh">
+              Semua contoh
+            </Link>
+            <Link to="/studio" search={{ template: content.theme }}>
+              Pakai template ini
+            </Link>
+          </nav>
+        )}
+      </header>
+      <DesignedInvitation
+        content={content}
+        recipient={recipient}
+        photos={photos}
+        journey
+        rsvpSaved={answer !== undefined}
+        rsvp={
+          <>
+            <button type="button" onClick={() => setAnswer('Hadir')}>
+              Hadir
+            </button>
+            <button type="button" onClick={() => setAnswer('Berhalangan')}>
+              Berhalangan
+            </button>
+            {answer && <p role="status">RSVP simulasi: {answer}.</p>}
+          </>
+        }
+      />
     </main>
   )
 }

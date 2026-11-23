@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client'
 import { loginRoute } from '@/routes/login'
 import { notesRoute } from '@/routes/notes'
 import { rootRoute } from '@/routes/root'
-import { guestRoute, weddingRoute } from '@/routes/wedding'
+import { exampleRoute, guestRoute, studioRoute, weddingRoute } from '@/routes/wedding'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN })
@@ -16,7 +16,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 const queryClient = new QueryClient()
 
 const router = createRouter({
-  routeTree: rootRoute.addChildren([weddingRoute, guestRoute, notesRoute, loginRoute]),
+  routeTree: rootRoute.addChildren([weddingRoute, studioRoute, exampleRoute, guestRoute, notesRoute, loginRoute]),
   context: { queryClient },
   defaultPreload: 'intent',
 })

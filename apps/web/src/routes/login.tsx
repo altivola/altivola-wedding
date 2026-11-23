@@ -8,13 +8,15 @@ import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth'
 import { orpc } from '@/lib/orpc'
 import { rootRoute } from './root'
+import { templateSearch } from './wedding-gallery'
 
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  beforeLoad: async () => {
+  validateSearch: templateSearch,
+  beforeLoad: async ({ search }) => {
     const { data } = await authClient.getSession()
-    if (data) throw redirect({ to: '/' })
+    if (data) throw redirect({ to: '/studio', search })
   },
   component: LoginPage,
 })
@@ -23,6 +25,9 @@ const socialProviders = ['google', 'github'] as const
 const providerLabels = { google: 'Google', github: 'GitHub' } as const
 
 function LoginPage() {
+  const { template } = loginRoute.useSearch()
+  const search = template ? `?template=${template}` : ''
+  const studioUrl = `/studio${search}`
   const [email, setEmail] = useState('')
   const providers = useQuery(orpc.authProviders.queryOptions())
   const useHub = providers.data?.includes('altivola') ?? false
@@ -31,7 +36,7 @@ function LoginPage() {
 
   const magicLink = useMutation({
     mutationFn: async () => {
-      const { error } = await authClient.signIn.magicLink({ email, callbackURL: '/' })
+      const { error } = await authClient.signIn.magicLink({ email, callbackURL: studioUrl })
       if (error) throw new Error(error.message ?? 'Could not send the link')
     },
   })
@@ -40,8 +45,8 @@ function LoginPage() {
     mutationFn: async (provider: keyof typeof providerLabels) => {
       const { data, error } = await authClient.signIn.social({
         provider: useHub ? 'altivola' : provider,
-        callbackURL: '/',
-        errorCallbackURL: '/login',
+        callbackURL: studioUrl,
+        errorCallbackURL: `/login${search}`,
         disableRedirect: useHub,
       })
       if (error) throw new Error(error.message ?? 'Could not start sign in')
@@ -60,7 +65,9 @@ function LoginPage() {
       <CardHeader>
         <CardTitle>Masuk ke Hari Bersama</CardTitle>
         <CardDescription>
-          {emailEnabled ? 'Kami akan kirim tautan masuk ke email kamu.' : 'Pilih akun untuk melanjutkan.'}
+          {emailEnabled
+            ? 'Kami akan kirim tautan masuk ke email kamu.'
+            : 'Masuk untuk membuat dan menerbitkan undangan.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

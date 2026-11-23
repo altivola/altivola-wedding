@@ -33,15 +33,14 @@
 .wedding-workshop[data-workshop-theme="print"] {
   background: radial-gradient(ellipse at 75% 32%, #985f50, #3d304a 65%);
 }
-.wedding-workshop > .wedding-scene {
+.workshop-backdrop {
   position: fixed;
   inset: 0;
   z-index: -2;
-}
-.wedding-workshop[data-workshop-room="studio"] > .wedding-scene[data-ready="true"],
-.wedding-workshop[data-workshop-room="album"] > .wedding-scene[data-ready="true"],
-.wedding-workshop[data-workshop-room="send"] > .wedding-scene[data-ready="true"] {
-  opacity: 0.55;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.48;
+  pointer-events: none;
 }
 .wedding-workshop::after {
   content: "";
@@ -81,7 +80,7 @@
   background: #242724cc;
 }
 .workshop-map button,
-.workshop-sign-in,
+.workshop-link,
 .guest-room-map button {
   padding: 8px 12px;
   border-radius: 7px;
@@ -89,7 +88,7 @@
   color: #fff5e4;
   cursor: pointer;
 }
-.workshop-sign-in {
+.workshop-link {
   text-decoration: none;
   border: 1px solid #ffffff40;
 }
@@ -111,24 +110,38 @@
     transform: translateY(14px) scale(0.986);
   }
 }
-.workshop-entry {
+.workshop-studio-title,
+.wedding-result-header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 77dvh;
-  max-width: 670px;
-  padding: 40px 0 52px 3vw;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
 }
-.workshop-entry h1 {
-  font:
-    400 clamp(62px, 9.8vw, 150px) / 0.82 Georgia,
-    serif;
-  letter-spacing: -0.085em;
-  margin-bottom: 24px;
+.workshop-studio-title > h2 {
+  margin: 0;
 }
-.workshop-entry p {
-  max-width: 36ch;
-  line-height: 1.55;
+.wedding-workspace :where(.workshop-studio-title) > button {
+  font-size: 0.8rem;
+  padding: 7px 11px;
+}
+.wedding-result-header {
+  max-width: 1130px;
+  margin: 0 auto 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #fff5e4;
+  background: #242724;
+}
+.wedding-guest :where(.wedding-result-header) > button,
+.wedding-result-header > a {
+  border-radius: 7px;
+  padding: 6px 10px;
+  margin: 0;
+  background: #fff0d7;
+  color: #2b2926;
+  font-size: 0.82rem;
+  text-decoration: none;
 }
 .workshop-doors {
   display: flex;
@@ -150,11 +163,6 @@
   background: transparent;
   color: inherit;
   border: 1px solid currentColor;
-}
-.wedding-workshop .wedding-collection {
-  margin-top: 25px;
-  background: color-mix(in srgb, var(--scene) 88%, transparent);
-  backdrop-filter: blur(8px);
 }
 .wedding-workshop .wedding-workspace {
   margin-top: 20px;
@@ -427,14 +435,9 @@
     width: 100%;
     justify-content: space-between;
   }
-  .workshop-map button {
+  .workshop-map :is(button, a) {
     font-size: 0.78rem;
     padding: 7px 6px;
-  }
-  .workshop-entry {
-    justify-content: end;
-    min-height: 74dvh;
-    padding: 10px 3vw 28px;
   }
   .wedding-workshop::after {
     background: linear-gradient(0deg, #171e1bf5 10%, #171e1b61 53%, transparent 82%);
@@ -474,9 +477,6 @@
 }
 body:has(.playable-garden) {
   overflow: hidden;
-}
-.wedding-workshop[data-workshop-room="entry"] .workshop-room {
-  animation: none;
 }
 .garden-canvas {
   position: absolute;
@@ -557,17 +557,6 @@ body:has(.playable-garden) {
   border-radius: 50%;
   box-shadow: 0 3px 12px #141727b8;
   pointer-events: none;
-}
-.garden-account {
-  position: absolute;
-  top: max(14px, env(safe-area-inset-top));
-  right: max(14px, env(safe-area-inset-right));
-}
-.garden-account .workshop-sign-in {
-  display: inline-flex;
-  background: #211f2be8;
-  border-color: #cbb89b7b;
-  font-size: 0.82rem;
 }
 .garden-water-status {
   color: #bef5f0;
@@ -789,24 +778,6 @@ body:has(.playable-garden) {
   .garden-camera > label {
     grid-template-columns: 50px minmax(20px, 1fr);
   }
-}
-
-.garden-volume {
-  display: grid;
-  grid-template-columns: auto minmax(50px, 90px);
-  gap: 6px;
-  align-items: center;
-  margin: 6px 0 0;
-  font-size: 0.75rem;
-  pointer-events: auto;
-}
-.garden-volume input {
-  accent-color: #f1c98f;
-}
-.garden-audio-error {
-  display: block;
-  font-size: 0.76rem;
-  margin-top: 5px;
 }
 
 .garden-picker {

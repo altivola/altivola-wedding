@@ -158,6 +158,16 @@ function WeddingStudio() {
     }
   }
 
+  const accountAction = canSignIn ? (
+    <Link className="workshop-sign-in" to="/login">
+      Masuk
+    </Link>
+  ) : session ? (
+    <button type="button" title={session.user.name || session.user.email} onClick={() => void authClient.signOut()}>
+      Keluar
+    </button>
+  ) : null
+
   return (
     <main className="wedding-studio wedding-workshop" data-workshop-room={room} data-workshop-theme={theme}>
       {room !== 'entry' && (
@@ -168,42 +178,32 @@ function WeddingStudio() {
           chapter={room === 'gallery' ? galleryChapter : roomCamera[room]}
         />
       )}
-      <header className="workshop-header">
-        <button type="button" className="wedding-brand" onClick={() => visit('entry')}>
-          hari bersama<span>.</span>
-        </button>
-        <nav className="workshop-map" aria-label="Peta studio">
-          {(Object.keys(workshopRooms) as WorkshopRoom[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-current={room === item ? 'step' : undefined}
-              disabled={photosBusy || pending}
-              onClick={() => visit(item)}
-            >
-              {workshopRooms[item]}
-            </button>
-          ))}
-          {canSignIn && (
-            <Link className="workshop-sign-in" to="/login">
-              Masuk
-            </Link>
-          )}
-          {session && (
-            <button
-              type="button"
-              title={session.user.name || session.user.email}
-              onClick={() => void authClient.signOut()}
-            >
-              Keluar
-            </button>
-          )}
-        </nav>
-      </header>
+      {room !== 'entry' && (
+        <header className="workshop-header">
+          <button type="button" className="wedding-brand" onClick={() => visit('entry')}>
+            hari bersama<span>.</span>
+          </button>
+          <nav className="workshop-map" aria-label="Peta studio">
+            {(Object.keys(workshopRooms) as WorkshopRoom[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                aria-current={room === item ? 'step' : undefined}
+                disabled={photosBusy || pending}
+                onClick={() => visit(item)}
+              >
+                {workshopRooms[item]}
+              </button>
+            ))}
+            {accountAction}
+          </nav>
+        </header>
+      )}
       <div className="workshop-room" id="workshop-room" tabIndex={-1} key={room}>
         {room === 'entry' && (
           <WeddingGarden
             places={gardenPlaces}
+            accountAction={accountAction}
             onVisit={(id) => {
               if (id === 'gallery' || id === 'studio' || id === 'album' || id === 'send') visit(id)
             }}

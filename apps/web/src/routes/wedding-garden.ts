@@ -15,6 +15,7 @@ import {
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
+  RingGeometry,
   Scene,
   SphereGeometry,
   Sprite,
@@ -128,6 +129,7 @@ export type GardenOptions = {
   map: GardenMap
   character: GardenCharacter
   event?: { date: string; venue: string }
+  onSwim?: (swimming: boolean) => void
 }
 const seedSites = [
   [-4, -4],
@@ -198,7 +200,11 @@ export function mountGarden(
   const shore = options.map === 'shore'
   const obstacles: { x: number; z: number; r: number }[] = []
   const inChannel = (x: number, z: number) => shore && Math.abs(z) < 16 && Math.abs(Math.abs(x) - 5.5) < 3.5
-  const inWater = (x: number, z: number) => inChannel(x, z) && Math.abs(z - 6) > 1.3 && Math.abs(z + 6) > 1.3
+  function waterHeight(x: number, z: number): number | null {
+    if (inChannel(x, z) && Math.abs(z - 6) > 1.3 && Math.abs(z + 6) > 1.3) return 0.038
+    if (landscape.ponds.some(([px, pz]) => Math.hypot(px - x, pz - z) < 1.98)) return 0.178
+    return null
+  }
   const props = [material('#313557'), material('#4a4466'), material('#675370')]
   mesh(scene, cube, edge, 0, -0.9, 0, 42, 1.4, 43)
   if (city) {
@@ -276,7 +282,6 @@ export function mountGarden(
       mesh(scene, disc, leaves[1] ?? ground, px + dx, 0.19, pz + dz, 0.32, 0.045, 0.24)
       mesh(scene, sphere, flower, px + dx, 0.28, pz + dz, 0.12, 0.11, 0.12)
     }
-    obstacles.push({ x: px, z: pz, r: 2 })
   }
   let randomSeed: number = landscape.seed
   function random() {
@@ -546,6 +551,7 @@ export function mountGarden(
   const player = new Group()
   scene.add(player)
   player.position.set(0, 0, 5)
+  player.rotation.order = 'YXZ'
   if (options.character === 'lantern') {
     mesh(player, cone, playerPaint, 0, 0.52, 0, 0.42, 1, 0.36)
     mesh(player, sphere, playerPaint, 0, 1.1, 0, 0.29, 0.31, 0.29)
@@ -575,6 +581,22 @@ export function mountGarden(
     mesh(player, sphere, flower, 0, 0.92, 0.451, 0.062, 0.044, 0.034)
     mesh(player, sphere, coat, 0.19, 0.52, -0.35, 0.21, hare ? 0.17 : 0.34, 0.17).rotation.z = -0.45
   }
+  const wakeGeometry = new RingGeometry(0.84, 1, 32)
+  const wake = Array.from({ length: 2 }, () => {
+    const ripple = new Mesh(
+      wakeGeometry,
+      new MeshBasicMaterial({
+        color: '#d5f2f0',
+        transparent: true,
+        depthWrite: false,
+      }),
+    )
+    ripple.rotation.x = -Math.PI / 2
+    ripple.visible = false
+    scene.add(ripple)
+    return ripple
+  })
+  let swimming = false
   const shadow = mesh(scene, disc, edge, 0, 0.035, 5, 0.52, 0.035, 0.37)
   const target = new Vector3()
   const raycaster = new Raycaster()
@@ -595,12 +617,7 @@ export function mountGarden(
   const reduced = matchMedia('(prefers-reduced-motion: reduce)')
   const directions = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'])
   function blocked(x: number, z: number) {
-    return (
-      inWater(x, z) ||
-      Math.abs(x) > 19.5 ||
-      Math.abs(z) > 19.5 ||
-      obstacles.some((o) => Math.hypot(x - o.x, z - o.z) < o.r + 0.25)
-    )
+    return Math.abs(x) > 19.5 || Math.abs(z) > 19.5 || obstacles.some((o) => Math.hypot(x - o.x, z - o.z) < o.r + 0.25)
   }
   function resize() {
     if (!host.clientWidth || !host.clientHeight) return
@@ -636,7 +653,7 @@ export function mountGarden(
       if (typeof index === 'number') onPhoto(index)
       return
     }
-    if (station || !hit || Math.abs(hit.x) > 19 || Math.abs(hit.z) > 19) return
+    if (event.pointerType === 'touch' || station || !hit || Math.abs(hit.x) > 19 || Math.abs(hit.z) > 19) return
     walkingTo = { x: hit.x, z: hit.z }
     landing.position.set(hit.x, 0.061, hit.z)
     landing.visible = true
@@ -681,9 +698,11 @@ export function mountGarden(
       }
     }
     const speed = Math.hypot(x, z)
-    if (speed > 0.01) {
-      const dx = (x / speed) * delta * 5.9
-      const dz = (z / speed) * delta * 5.9
+    const moving = speed > 0.01
+    if (moving) {
+      const travel = delta * (swimming ? 3.4 : 5.9) * (walkingTo ? 1 : Math.min(speed, 1))
+      const dx = (x / speed) * travel
+      const dz = (z / speed) * travel
       const beforeX = p.x
       const beforeZ = p.z
       if (!blocked(p.x + dx, p.z)) p.x += dx
@@ -694,7 +713,32 @@ export function mountGarden(
       }
       player.rotation.y = Math.atan2(x, z)
     }
-    p.y = speed > 0.01 && !reduced.matches ? Math.abs(Math.sin(now * 0.014)) * 0.12 : 0
+    const surface = waterHeight(p.x, p.z)
+    if (swimming !== (surface !== null)) {
+      swimming = surface !== null
+      options.onSwim?.(swimming)
+    }
+    const waterMotion = reduced.matches ? 0 : Math.sin(now * 0.008)
+    const pitch = swimming && moving ? 0.86 + waterMotion * 0.1 : 0
+    const playerHeight =
+      surface === null
+        ? moving && !reduced.matches
+          ? Math.abs(Math.sin(now * 0.014)) * 0.12
+          : 0
+        : surface - 0.47 + waterMotion * 0.055
+    const blend = reduced.matches ? 1 : Math.min(1, delta * 13)
+    p.y += (playerHeight - p.y) * blend
+    player.rotation.x += (pitch - player.rotation.x) * blend
+    player.rotation.z = swimming && moving ? waterMotion * 0.18 : 0
+    shadow.visible = !swimming
+    wake.forEach((ripple, index) => {
+      ripple.visible = surface !== null && !reduced.matches
+      if (surface === null) return
+      const phase = (now * (moving ? 0.0022 : 0.00105) + index / wake.length) % 1
+      ripple.position.set(p.x, surface + 0.034, p.z)
+      ripple.scale.setScalar(0.34 + phase * 0.85)
+      ripple.material.opacity = (1 - phase) * (moving ? 0.57 : 0.27)
+    })
     shadow.position.x = p.x
     shadow.position.z = p.z
     const place = destinations.find((item) => Math.hypot(item.x - p.x, item.z - p.z) < 2.55) ?? null
@@ -796,6 +840,8 @@ export function mountGarden(
         scarf,
         pond,
         flower,
+        wakeGeometry,
+        ...wake.map((ripple) => ripple.material),
       ])
         resource.dispose()
       for (const sign of signs) {

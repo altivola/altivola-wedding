@@ -464,15 +464,19 @@
 }
 
 .playable-garden {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  z-index: 4;
   isolation: isolate;
-  min-height: clamp(500px, 80dvh, 1000px);
-  margin: 12px 0 0;
   overflow: hidden;
-  border-radius: 18px;
   background: radial-gradient(ellipse at 65% 45%, #586470, #1b2539 72%);
   color: #fff2dd;
-  border: 1px solid #e1bea048;
+}
+body:has(.playable-garden) {
+  overflow: hidden;
+}
+.wedding-workshop[data-workshop-room="entry"] .workshop-room {
+  animation: none;
 }
 .garden-canvas {
   position: absolute;
@@ -487,8 +491,8 @@
 }
 .garden-hud {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(14px, env(safe-area-inset-left));
   max-width: 290px;
   padding: 13px 15px;
   background: #111b2bdc;
@@ -531,49 +535,47 @@
   background: #f5dbab;
   color: #292236;
 }
-.garden-dpad {
+.playable-garden .garden-joystick {
   position: absolute;
-  bottom: 14px;
-  left: 14px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: max(18px, env(safe-area-inset-left));
   display: grid;
-  grid-template-columns: repeat(3, 36px);
-  gap: 4px;
-}
-.garden-dpad button {
-  font-size: 0;
+  width: 106px;
+  aspect-ratio: 1;
+  place-items: center;
   padding: 0;
-  height: 36px;
   touch-action: none;
+  user-select: none;
+  border-radius: 50%;
+  background: #141b31a8;
+  border: 1px solid #ffe8bb83;
 }
-.garden-dpad button::before {
-  font-size: 17px;
+.garden-joystick-thumb {
+  width: 45px;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 35% 25%, #ffebc8, #b58b5a);
+  border-radius: 50%;
+  box-shadow: 0 3px 12px #141727b8;
+  pointer-events: none;
 }
-.garden-dpad button:nth-child(1) {
-  grid-column: 2;
+.garden-account {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
 }
-.garden-dpad button:nth-child(2) {
-  grid-column: 1;
+.garden-account .workshop-sign-in {
+  display: inline-flex;
+  background: #211f2be8;
+  border-color: #cbb89b7b;
+  font-size: 0.82rem;
 }
-.garden-dpad button:nth-child(1)::before {
-  content: "↑";
-}
-.garden-dpad button:nth-child(2)::before {
-  content: "←";
-}
-.garden-dpad button:nth-child(3)::before {
-  content: "↓";
-}
-.garden-dpad button:nth-child(4)::before {
-  content: "→";
-}
-.garden-dpad button:active {
-  background: #f5dbab;
-  color: #292236;
+.garden-water-status {
+  color: #bef5f0;
 }
 .garden-shortcuts {
   position: absolute;
-  right: 12px;
-  bottom: 14px;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
   max-width: 62%;
   display: flex;
   flex-wrap: wrap;
@@ -595,7 +597,6 @@
   border: 1px solid currentColor;
   border-radius: 3px;
 }
-.playable-garden[data-ready="false"] .garden-dpad,
 .playable-garden[data-ready="false"] .garden-controls-copy {
   display: none;
 }
@@ -613,23 +614,32 @@
   opacity: 0.28;
 }
 @media (max-width: 620px) {
-  .playable-garden {
-    min-height: 74dvh;
-  }
   .garden-hud {
-    max-width: 215px;
-    padding: 9px;
+    max-width: min(200px, 58vw);
+    padding: 8px;
   }
   .garden-hud h1 {
-    font-size: 26px;
+    font-size: 21px;
+    margin-bottom: 3px;
   }
-  .garden-hud .garden-controls-copy {
+  .garden-hud > p:not(.garden-water-status) {
+    display: none;
+  }
+  .garden-shortcuts {
+    max-width: calc(100% - 148px);
+  }
+  .playable-garden .garden-interact {
+    bottom: max(112px, calc(env(safe-area-inset-bottom) + 100px));
+    left: auto;
+    right: max(12px, env(safe-area-inset-right));
+    transform: none;
+  }
+  .garden-interact kbd {
     display: none;
   }
 }
 
-.playable-garden[data-album-open="true"]
-  :where(.garden-dpad, .garden-hud .garden-controls-copy, .garden-hud .garden-lights) {
+.playable-garden[data-album-open="true"] :where(.garden-hud .garden-controls-copy, .garden-hud .garden-lights) {
   display: none;
 }
 .playable-garden > .garden-album-hud {
@@ -704,9 +714,6 @@
   }
 }
 
-.wedding-guest > .playable-garden {
-  max-width: 1130px;
-}
 .playable-garden[data-album-open="true"] .garden-hud p {
   display: none;
 }
@@ -764,7 +771,7 @@
   margin-right: 9px;
 }
 
-.playable-garden[data-station] :where(.garden-dpad, .garden-hud p) {
+.playable-garden[data-station] :where(.garden-hud p) {
   display: none;
 }
 .garden-station button {

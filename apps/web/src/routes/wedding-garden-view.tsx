@@ -1,5 +1,5 @@
 import { type GardenCharacter, type GardenMap, gardenCharacters, gardenMaps } from '@app/api/wedding-design'
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { type PointerEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import type { AlbumCamera, GardenPhoto, GardenPlace, GardenStation, mountGarden } from './wedding-garden'
 import { gardenCharacterNames, gardenMapNames } from './wedding-garden-options'
 
@@ -9,6 +9,7 @@ export function WeddingGarden({
   places,
   onVisit,
   onExit,
+  accountAction,
   album,
   event,
   rsvp,
@@ -19,6 +20,7 @@ export function WeddingGarden({
   places: GardenPlace[]
   onVisit: (id: string) => void
   onExit?: () => void
+  accountAction?: ReactNode
   album?: GardenPhoto[]
   event?: { date: string; venue: string }
   rsvp?: ReactNode
@@ -47,6 +49,32 @@ export function WeddingGarden({
   const photo = selected === null ? undefined : album?.[selected]
   const [near, setNear] = useState<GardenPlace | null>(null)
   const [lights, setLights] = useState(0)
+  const [swimming, setSwimming] = useState(false)
+  const [stick, setStick] = useState({ x: 0, z: 0 })
+  const joystickPointer = useRef<number | null>(null)
+
+  function steer(event: PointerEvent<HTMLButtonElement>) {
+    if (joystickPointer.current !== event.pointerId) return
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const x = event.clientX - bounds.left - bounds.width / 2
+    const z = event.clientY - bounds.top - bounds.height / 2
+    const distance = Math.hypot(x, z)
+    const force = Math.min(1, Math.max(0, (distance - 5) / (bounds.width / 2 - 5)))
+    const scale = distance ? force / distance : 0
+    const direction = { x: x * scale, z: z * scale }
+    setStick(direction)
+    controller.current?.steer(direction.x, direction.z)
+  }
+
+  const resetJoystick = useCallback(() => {
+    joystickPointer.current = null
+    setStick({ x: 0, z: 0 })
+    controller.current?.steer(0, 0)
+  }, [])
+
+  function releaseJoystick(event: PointerEvent<HTMLButtonElement>) {
+    if (joystickPointer.current === event.pointerId) resetJoystick()
+  }
 
   const chime = useCallback((frequency: number) => {
     const system = audio.current
@@ -118,7 +146,7 @@ export function WeddingGarden({
           },
           initialAlbum.current,
           setSelected,
-          { map, character, event: initialEvent.current },
+          { map, character, event: initialEvent.current, onSwim: setSwimming },
         )
         setReady(true)
       })
@@ -151,6 +179,7 @@ export function WeddingGarden({
   const enter = useCallback(
     (id: string) => {
       if ((id === 'album' && album?.length) || (id === 'event' && event) || (id === 'rsvp' && rsvp)) {
+        resetJoystick()
         setStation(id)
         controller.current?.setStation(id)
         chime(659.25)
@@ -158,7 +187,7 @@ export function WeddingGarden({
       }
       onVisit(id)
     },
-    [album, event, rsvp, chime, onVisit],
+    [album, event, rsvp, chime, onVisit, resetJoystick],
   )
 
   function closeStation() {
@@ -211,6 +240,11 @@ export function WeddingGarden({
         <p role="status" className="garden-lights">
           {lights === 5 ? 'Taman sudah menyala' : `Cahaya ${lights}/5`}
         </p>
+        {swimming && (
+          <p className="garden-water-status" role="status">
+            Berenang
+          </p>
+        )}
         <button type="button" aria-label="Suara taman" aria-pressed={sound} onClick={() => void toggleSound()}>
           {sound ? 'Jeda musik' : 'Nyalakan musik'}
         </button>
@@ -242,9 +276,11 @@ export function WeddingGarden({
                 onChange={(e) => {
                   const picked = gardenMaps.find((item) => item === e.target.value)
                   if (!picked || picked === map) return
+                  resetJoystick()
                   setReady(false)
                   setNear(null)
                   setLights(0)
+                  setSwimming(false)
                   setMap(picked)
                 }}
               >
@@ -262,9 +298,11 @@ export function WeddingGarden({
                 onChange={(e) => {
                   const picked = gardenCharacters.find((item) => item === e.target.value)
                   if (!picked || picked === character) return
+                  resetJoystick()
                   setReady(false)
                   setNear(null)
                   setLights(0)
+                  setSwimming(false)
                   setCharacter(picked)
                 }}
               >
@@ -283,33 +321,30 @@ export function WeddingGarden({
           </button>
         )}
       </div>
-      <div className="garden-dpad">
-        {(
-          [
-            ['Atas', 0, -1],
-            ['Kiri', -1, 0],
-            ['Bawah', 0, 1],
-            ['Kanan', 1, 0],
-          ] as const
-        ).map(([label, x, z]) => (
-          <button
-            key={label}
-            type="button"
-            aria-label={`Jalan ${label.toLowerCase()}`}
-            onPointerDown={(event) => {
-              event.currentTarget.setPointerCapture(event.pointerId)
-              controller.current?.steer(x, z)
-            }}
-            onLostPointerCapture={() => controller.current?.steer(0, 0)}
-            onKeyDown={(event) => {
-              if (event.key === ' ' || event.key === 'Enter') controller.current?.steer(x, z)
-            }}
-            onKeyUp={() => controller.current?.steer(0, 0)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {accountAction && <div className="garden-account">{accountAction}</div>}
+      {ready && !station && (
+        <button
+          className="garden-joystick"
+          type="button"
+          aria-label="Joystick arah, geser untuk bergerak"
+          onPointerDown={(event) => {
+            if (event.button !== 0 || joystickPointer.current !== null) return
+            joystickPointer.current = event.pointerId
+            event.currentTarget.setPointerCapture(event.pointerId)
+            steer(event)
+          }}
+          onPointerMove={steer}
+          onPointerUp={releaseJoystick}
+          onPointerCancel={releaseJoystick}
+          onLostPointerCapture={releaseJoystick}
+        >
+          <span
+            aria-hidden="true"
+            className="garden-joystick-thumb"
+            style={{ transform: `translate(${stick.x * 27}px, ${stick.z * 27}px)` }}
+          />
+        </button>
+      )}
       {near && !station && (
         <button type="button" className="garden-interact" onClick={() => enter(near.id)}>
           Masuk · {near.label} <kbd>E</kbd>

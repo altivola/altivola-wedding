@@ -1,0 +1,822 @@
+.garden-album-strip img {
+  width: 44px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+}
+.garden-lightbox figure {
+  margin: 0;
+  padding: 12px;
+}
+.garden-lightbox img {
+  width: 100%;
+  max-height: 65dvh;
+  object-fit: contain;
+  margin-top: 9px;
+}
+.wedding-workshop,
+.wedding-guest:has([data-journey="true"]) {
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background: #242b23;
+  color: #fff5e4;
+}
+.wedding-workshop {
+  padding: clamp(14px, 3vw, 44px);
+  background: radial-gradient(ellipse at 75% 32%, #5e6855, #262d26 65%);
+}
+.wedding-workshop[data-workshop-theme="night"] {
+  background: radial-gradient(ellipse at 75% 32%, #41456a, #181c32 65%);
+}
+.wedding-workshop[data-workshop-theme="print"] {
+  background: radial-gradient(ellipse at 75% 32%, #985f50, #3d304a 65%);
+}
+.wedding-workshop > .wedding-scene {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+}
+.wedding-workshop[data-workshop-room="studio"] > .wedding-scene[data-ready="true"],
+.wedding-workshop[data-workshop-room="album"] > .wedding-scene[data-ready="true"],
+.wedding-workshop[data-workshop-room="send"] > .wedding-scene[data-ready="true"] {
+  opacity: 0.55;
+}
+.wedding-workshop::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #18201ef5 0%, #18201eb0 29%, transparent 75%),
+    linear-gradient(0deg, #181f1999, transparent 31%);
+}
+.workshop-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+.workshop-header .wedding-brand {
+  margin: 0;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.workshop-header .wedding-brand span {
+  color: #f3b88a;
+}
+.workshop-map,
+.guest-room-map {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 4px;
+  border: 1px solid #ffffff40;
+  border-radius: 12px;
+  background: #242724cc;
+}
+.workshop-map button,
+.workshop-sign-in,
+.guest-room-map button {
+  padding: 8px 12px;
+  border-radius: 7px;
+  background: transparent;
+  color: #fff5e4;
+  cursor: pointer;
+}
+.workshop-sign-in {
+  text-decoration: none;
+  border: 1px solid #ffffff40;
+}
+.workshop-map button[aria-current],
+.guest-room-map button[aria-current] {
+  background: #fff0d7;
+  color: #2b2926;
+}
+.workshop-map button:disabled {
+  opacity: 0.65;
+}
+.workshop-room {
+  animation: workshop-arrive 0.58s cubic-bezier(0.22, 0.72, 0.25, 1) both;
+  outline: none;
+}
+@keyframes workshop-arrive {
+  from {
+    opacity: 0.2;
+    transform: translateY(14px) scale(0.986);
+  }
+}
+.workshop-entry {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 77dvh;
+  max-width: 670px;
+  padding: 40px 0 52px 3vw;
+}
+.workshop-entry h1 {
+  font:
+    400 clamp(62px, 9.8vw, 150px) / 0.82 Georgia,
+    serif;
+  letter-spacing: -0.085em;
+  margin-bottom: 24px;
+}
+.workshop-entry p {
+  max-width: 36ch;
+  line-height: 1.55;
+}
+.workshop-doors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.workshop-doors button,
+.wedding-links button,
+.guest-room-actions button {
+  border-radius: 100px;
+  padding: 9px 14px;
+  background: #f0e4c9;
+  color: #302b26;
+  font-weight: 700;
+  cursor: pointer;
+}
+.workshop-doors :where(button + button) {
+  background: transparent;
+  color: inherit;
+  border: 1px solid currentColor;
+}
+.wedding-workshop .wedding-collection {
+  margin-top: 25px;
+  background: color-mix(in srgb, var(--scene) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.wedding-workshop .wedding-workspace {
+  margin-top: 20px;
+}
+.workshop-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.05fr);
+  gap: 16px;
+  align-items: start;
+}
+.workshop-album-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.journey-panel,
+.journey-workspace .design-controls {
+  background: #fbf0db;
+  color: #2e2828;
+  border: 1px solid #d9c8ad;
+  border-radius: 14px;
+  padding: clamp(12px, 2vw, 23px);
+}
+:where(.journey-workspace) .design-controls h3 {
+  margin-top: 2px;
+}
+.wedding-live-label {
+  background: #202624df;
+  color: #fff3dc;
+  padding: 6px 10px;
+  border-radius: 7px;
+  width: max-content;
+  max-width: 100%;
+}
+.section-alignment {
+  padding: 0;
+  border: 0;
+  margin: 14px 0;
+  min-width: 0;
+}
+.section-alignment legend {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.section-alignment label {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 91px);
+  gap: 6px;
+  align-items: center;
+  font-size: 0.86rem;
+}
+.wedding-album-editor h3,
+.wedding-links h2 {
+  font:
+    400 clamp(32px, 4.5vw, 62px) / 1 Georgia,
+    serif;
+  margin-bottom: 12px;
+}
+.wedding-album-editor ol {
+  padding: 0;
+  list-style: none;
+}
+.wedding-album-editor li {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 9px 0;
+  border-top: 1px solid #ac997d57;
+}
+.wedding-album-editor :where(li) img {
+  width: 74px;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.album-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.album-actions button {
+  font-size: 0.78rem;
+  padding: 4px 7px;
+}
+.album-actions button[aria-pressed="true"] {
+  background: #624a58;
+}
+.wedding-links {
+  max-width: 680px;
+  margin-top: 24px;
+}
+.garden-camera > label {
+  display: grid;
+  grid-template-columns: 72px minmax(50px, 110px);
+  align-items: center;
+  gap: 3px;
+}
+.garden-picker label {
+  display: grid;
+  grid-template-columns: 57px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+.wedding-links form label {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.wedding-links textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid #8b7e6b;
+  border-radius: 8px;
+  padding: 8px;
+}
+.wedding-links button {
+  background: #303b30;
+  color: #fff4d8;
+}
+.wedding-links button:disabled {
+  opacity: 0.65;
+}
+.designed-invitation {
+  --room-accent: #ebca90;
+}
+.designed-invitation[data-accent="lavender"] {
+  --room-accent: #d8bbed;
+}
+.designed-invitation[data-accent="fern"] {
+  --room-accent: #b6d0a1;
+}
+.designed-section[data-align="left"] {
+  text-align: start;
+}
+.designed-invitation[data-journey="true"] {
+  position: relative;
+  isolation: isolate;
+}
+.designed-invitation[data-journey="true"] .designed-section {
+  animation: workshop-arrive 0.48s ease both;
+  min-height: 230px;
+  align-content: center;
+  background: color-mix(in srgb, var(--room-accent) 18%, transparent);
+}
+.designed-invitation .guest-room-map {
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+  border-radius: 0;
+  padding: 8px;
+}
+.designed-invitation .guest-room-map button[aria-current] {
+  background: var(--room-accent);
+}
+.guest-room-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px;
+  background: #282729;
+}
+.guest-room-actions button {
+  background: var(--room-accent);
+  color: #282125;
+}
+.guest-photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 660px;
+  margin: 12px auto;
+}
+.guest-photo-gallery figure {
+  margin: 0;
+  min-width: 0;
+  background: #fff4e2;
+  color: #352c30;
+  padding: 5px;
+  border-radius: 5px;
+}
+.background-picker > img {
+  max-height: 105px;
+  border-radius: 5px;
+  margin-bottom: 7px;
+}
+.guest-photo-gallery img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.17;
+  object-fit: cover;
+}
+.guest-photo-gallery figcaption {
+  padding: 6px;
+  font-size: 0.9rem;
+}
+.guest-photo-gallery[data-layout="filmstrip"] {
+  display: flex;
+  overflow: auto;
+  scroll-snap-type: x mandatory;
+}
+.guest-photo-gallery[data-layout="filmstrip"] figure {
+  flex: 0 0 68%;
+  scroll-snap-align: start;
+}
+.guest-photo-gallery[data-layout="stack"] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 390px;
+}
+.guest-photo-gallery[data-layout="stack"] figure:nth-child(even) {
+  transform: rotate(2deg);
+}
+.designed-invitation[data-custom-background="true"][data-journey="false"] .designed-section {
+  background: #181424bd;
+  color: #fff2dd;
+}
+.wedding-guest > .designed-invitation[data-journey="true"] {
+  max-width: 1100px;
+  min-height: 70dvh;
+  display: flex;
+  flex-direction: column;
+}
+.wedding-guest .designed-invitation > .wedding-scene {
+  opacity: 0;
+}
+.wedding-guest .designed-invitation > .wedding-scene[data-ready="true"] {
+  opacity: 1;
+}
+.wedding-guest .designed-invitation[data-journey="true"] .designed-cover:not([hidden]) {
+  flex: 1;
+  min-height: 56dvh;
+}
+.wedding-guest .designed-invitation[data-journey="true"] .designed-cover:not([hidden]) > img {
+  opacity: 0.82;
+}
+.wedding-guest .designed-invitation[data-journey="true"] .designed-section {
+  flex: 1;
+  margin: clamp(16px, 5vw, 64px);
+  padding: clamp(12px, 4vw, 40px);
+  border: 1px solid #ffffff63;
+  border-radius: 14px;
+  background: #fff2dded;
+  color: #2a2925;
+  box-shadow: 0 22px 70px #17151c55;
+}
+.wedding-guest .designed-invitation[data-journey="true"][data-style="ink"] .designed-section {
+  background: #222940eb;
+  color: #fff0dc;
+}
+.wedding-guest .designed-invitation[data-journey="true"][data-style="rose"] .designed-section {
+  background: #ffe6e5ed;
+  color: #522b3c;
+}
+@media (max-width: 950px) {
+  .workshop-editor-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .workshop-editor-grid .wedding-live {
+    grid-row: 1 / 3;
+    grid-column: 2;
+  }
+}
+@media (max-width: 620px) {
+  .workshop-header {
+    gap: 4px;
+  }
+  :where(.workshop-header) .workshop-map {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .workshop-map button {
+    font-size: 0.78rem;
+    padding: 7px 6px;
+  }
+  .workshop-entry {
+    justify-content: end;
+    min-height: 74dvh;
+    padding: 10px 3vw 28px;
+  }
+  .wedding-workshop::after {
+    background: linear-gradient(0deg, #171e1bf5 10%, #171e1b61 53%, transparent 82%);
+  }
+  .workshop-editor-grid,
+  .workshop-album-grid {
+    grid-template-columns: 1fr;
+  }
+  .workshop-editor-grid .wedding-live {
+    grid-row: auto;
+    grid-column: auto;
+  }
+  .workshop-map,
+  .guest-room-map {
+    border-radius: 8px;
+  }
+  .guest-room-map button {
+    font-size: 0.85rem;
+    padding: 7px 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workshop-room,
+  .designed-invitation[data-journey="true"] .designed-section {
+    animation: none;
+  }
+}
+
+.playable-garden {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(500px, 80dvh, 1000px);
+  margin: 12px 0 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 65% 45%, #586470, #1b2539 72%);
+  color: #fff2dd;
+  border: 1px solid #e1bea048;
+}
+.garden-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  touch-action: none;
+}
+.garden-canvas canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.garden-hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  max-width: 290px;
+  padding: 13px 15px;
+  background: #111b2bdc;
+  border: 1px solid #e9cba44a;
+  border-radius: 11px;
+  pointer-events: none;
+}
+.garden-hud h1 {
+  font:
+    italic 36px / 1 Georgia,
+    serif;
+  margin: 0 0 9px;
+}
+.garden-station p {
+  margin: 3px 0 6px;
+}
+.garden-hud p {
+  font-size: 0.85rem;
+  line-height: 1.42;
+  margin-bottom: 7px;
+}
+.garden-hud .garden-lights {
+  color: #ffe5a9;
+  font-weight: 700;
+}
+.playable-garden button {
+  background: #211f2be8;
+  color: #fff0d5;
+  border: 1px solid #cbb89b7b;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.garden-hud button {
+  pointer-events: auto;
+  margin: 4px 4px 0 0;
+}
+.garden-hud button[aria-pressed="true"] {
+  background: #f5dbab;
+  color: #292236;
+}
+.garden-dpad {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
+  gap: 4px;
+}
+.garden-dpad button {
+  font-size: 0;
+  padding: 0;
+  height: 36px;
+  touch-action: none;
+}
+.garden-dpad button::before {
+  font-size: 17px;
+}
+.garden-dpad button:nth-child(1) {
+  grid-column: 2;
+}
+.garden-dpad button:nth-child(2) {
+  grid-column: 1;
+}
+.garden-dpad button:nth-child(1)::before {
+  content: "↑";
+}
+.garden-dpad button:nth-child(2)::before {
+  content: "←";
+}
+.garden-dpad button:nth-child(3)::before {
+  content: "↓";
+}
+.garden-dpad button:nth-child(4)::before {
+  content: "→";
+}
+.garden-dpad button:active {
+  background: #f5dbab;
+  color: #292236;
+}
+.garden-shortcuts {
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  max-width: 62%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+.playable-garden .garden-interact {
+  position: absolute;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  background: #ffe5af;
+  color: #2b2532;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.garden-interact kbd {
+  padding: 1px 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+.playable-garden[data-ready="false"] .garden-dpad,
+.playable-garden[data-ready="false"] .garden-controls-copy {
+  display: none;
+}
+.background-picker {
+  margin-bottom: 12px;
+}
+.background-picker h3 {
+  font:
+    400 28px Georgia,
+    serif;
+  margin-bottom: 6px;
+}
+
+.designed-invitation[data-custom-background="true"] > .wedding-scene[data-ready="true"] {
+  opacity: 0.28;
+}
+@media (max-width: 620px) {
+  .playable-garden {
+    min-height: 74dvh;
+  }
+  .garden-hud {
+    max-width: 215px;
+    padding: 9px;
+  }
+  .garden-hud h1 {
+    font-size: 26px;
+  }
+  .garden-hud .garden-controls-copy {
+    display: none;
+  }
+}
+
+.playable-garden[data-album-open="true"]
+  :where(.garden-dpad, .garden-hud .garden-controls-copy, .garden-hud .garden-lights) {
+  display: none;
+}
+.playable-garden > .garden-album-hud {
+  position: absolute;
+  inset: auto 12px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: #151c2ee8;
+  border: 1px solid #e5c5a25c;
+  border-radius: 10px;
+  animation: workshop-arrive 0.35s ease both;
+}
+.garden-album-hud h2 {
+  font:
+    400 24px Georgia,
+    serif;
+  margin: 0 0 3px;
+  color: #fff2dd;
+}
+.garden-album-hud p {
+  font-size: 0.8rem;
+}
+.garden-album-strip {
+  display: flex;
+  gap: 5px;
+  overflow: auto;
+  max-width: 60%;
+}
+.garden-album-strip button {
+  flex: 0 0 48px;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.garden-lightbox {
+  width: min(90vw, 740px);
+  max-height: 86dvh;
+  padding: 0;
+  background: #191a27;
+  color: #fff3df;
+  border: 1px solid #e5c5a2;
+  border-radius: 12px;
+  margin: auto;
+}
+.garden-lightbox::backdrop {
+  background: #1315279e;
+  backdrop-filter: blur(3px);
+}
+
+.garden-lightbox figcaption {
+  text-align: center;
+  padding: 8px;
+}
+@media (max-width: 620px) {
+  .garden-album-hud {
+    flex-wrap: wrap;
+  }
+  .garden-album-strip {
+    max-width: 100%;
+    order: 3;
+  }
+  .garden-album-hud h2 {
+    font-size: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .garden-album-hud {
+    animation: none;
+  }
+}
+
+.wedding-guest > .playable-garden {
+  max-width: 1130px;
+}
+.playable-garden[data-album-open="true"] .garden-hud p {
+  display: none;
+}
+
+.garden-camera {
+  display: grid;
+  gap: 4px;
+  font-size: 0.77rem;
+  color: #fff2dd;
+}
+.garden-album-hud > .garden-camera {
+  background: transparent;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+.garden-camera > div {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.garden-camera button[aria-pressed="true"] {
+  background: #f6dfb4;
+  color: #28212d;
+}
+
+.garden-camera input {
+  accent-color: #f1c98f;
+  width: 100%;
+}
+.playable-garden > .garden-station {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  max-width: min(320px, 92%);
+  padding: 13px 15px;
+  background: #151c2ef2;
+  color: #fff2dd;
+  border: 1px solid #e5c5a25c;
+  border-radius: 10px;
+}
+.garden-station h2 {
+  font:
+    400 27px Georgia,
+    serif;
+  margin-bottom: 4px;
+}
+.garden-station h3 {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+.garden-station a {
+  display: inline-block;
+  text-decoration: underline;
+  margin-right: 9px;
+}
+
+.playable-garden[data-station] :where(.garden-dpad, .garden-hud p) {
+  display: none;
+}
+.garden-station button {
+  margin: 4px 4px 0 0;
+}
+@media (max-width: 620px) {
+  .garden-camera {
+    order: 4;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+  .garden-camera > div {
+    grid-column: 1 / -1;
+  }
+  .garden-camera > label {
+    grid-template-columns: 50px minmax(20px, 1fr);
+  }
+}
+
+.garden-volume {
+  display: grid;
+  grid-template-columns: auto minmax(50px, 90px);
+  gap: 6px;
+  align-items: center;
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  pointer-events: auto;
+}
+.garden-volume input {
+  accent-color: #f1c98f;
+}
+.garden-audio-error {
+  display: block;
+  font-size: 0.76rem;
+  margin-top: 5px;
+}
+
+.garden-picker {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  pointer-events: auto;
+}
+.garden-picker summary {
+  cursor: pointer;
+  color: #ffe4a8;
+}
+
+.garden-picker select {
+  padding: 3px 4px;
+  background: #282439;
+  color: #fff2dd;
+  border: 1px solid #dec5a67a;
+  border-radius: 4px;
+  width: 100%;
+}

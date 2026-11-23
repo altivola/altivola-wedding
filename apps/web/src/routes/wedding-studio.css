@@ -1,0 +1,208 @@
+.studio-canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+  padding: 8px 10px;
+  background: #201d32e8;
+  border: 1px solid #ffffff30;
+  border-radius: 8px;
+  color: #fff3da;
+  font-size: 0.85rem;
+}
+.studio-canvas-toolbar div,
+.studio-side nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.studio-canvas-toolbar button,
+.studio-side nav button {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: none;
+  color: inherit;
+  font-size: 0.8rem;
+}
+.studio-canvas-toolbar button[aria-pressed="true"],
+.studio-side nav button[aria-pressed="true"] {
+  background: #e6ce9c;
+  color: #26223a;
+  border-color: #e6ce9c;
+}
+.studio-side nav {
+  border-bottom: 1px solid #4f392e41;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+}
+.studio-side .design-controls {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.studio-side {
+  min-width: 0;
+}
+.studio-inspector h3 {
+  font:
+    400 clamp(20px, 2.6vw, 34px) / 1.04 Georgia,
+    serif;
+  margin: 12px 0;
+}
+.studio-inspector textarea {
+  min-height: 68px;
+}
+.inspector-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 8px;
+}
+.inspector-grid label {
+  font-size: 0.84rem;
+}
+.studio-inspector input[type="color"] {
+  width: 100%;
+  height: 34px;
+  padding: 3px;
+  cursor: pointer;
+}
+.studio-inspector input[type="range"] {
+  width: 100%;
+  accent-color: #655076;
+}
+.studio-canvas {
+  max-width: 100%;
+  margin-inline: auto;
+  transition: max-width 0.2s;
+}
+.studio-canvas[data-device="phone"] {
+  max-width: 354px;
+}
+.designed-invitation {
+  container-type: inline-size;
+  container-name: invitation;
+}
+.designed-invitation .designed-label {
+  text-align: var(--section-align, center);
+}
+.designed-invitation .designed-label h2 {
+  font-size: calc(clamp(26px, 4vw, 58px) * var(--section-scale, 1));
+}
+.studio-section {
+  position: relative;
+  text-align: var(--section-align, center);
+}
+.studio-section[data-inspected="true"] {
+  outline: 2px solid #b68ce6;
+  outline-offset: -2px;
+}
+.studio-section h3 {
+  font-size: calc(29px * var(--section-scale, 1));
+}
+.studio-section[data-composition="editorial"] {
+  display: grid;
+  grid-template-columns: minmax(0, 0.87fr) minmax(0, 1.13fr);
+  gap: clamp(8px, 3vw, 27px);
+  align-items: center;
+}
+.studio-section-heading,
+.studio-section-body {
+  min-width: 0;
+}
+.studio-section[data-composition="framed"] .studio-section-body {
+  padding: 15px;
+  border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.studio-section-heading {
+  overflow-wrap: anywhere;
+}
+.studio-eyebrow {
+  font:
+    700 0.76rem system-ui,
+    sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.designed-invitation [data-studio-font="serif"] {
+  --cover-font: Georgia, serif;
+  --cover-style: normal;
+}
+.designed-invitation [data-studio-font="sans"] {
+  --cover-font: system-ui, sans-serif;
+  --cover-style: normal;
+}
+.designed-invitation [data-studio-font="italic"] {
+  --cover-font: Georgia, serif;
+  --cover-style: italic;
+}
+.wedding-workspace .studio-select-overlay {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 3px 7px;
+  background: #261632e0;
+  color: #f8ebfa;
+  font-size: 0.73rem;
+  border-radius: 5px;
+  z-index: 2;
+}
+.wedding-workspace .designed-label .studio-select-overlay {
+  top: auto;
+  bottom: 100%;
+  right: 39px;
+  white-space: nowrap;
+}
+@container invitation (max-width: 410px) {
+  .studio-section,
+  .designed-invitation .designed-label {
+    text-align: var(--section-mobile-align, center);
+  }
+  .studio-section[data-composition="editorial"] {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-canvas {
+    transition: none;
+  }
+}
+
+.studio-mobile-nav {
+  display: none;
+}
+@media (max-width: 620px) {
+  .studio-mobile-nav {
+    display: flex;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    margin-bottom: 12px;
+    padding: 5px;
+    border-radius: 9px;
+    background: #211e32;
+    border: 1px solid #e6ce9c60;
+    color: #fff4df;
+  }
+  .studio-mobile-nav button {
+    flex: 1;
+    padding: 7px;
+    border-radius: 6px;
+  }
+  .studio-mobile-nav [aria-pressed="true"] {
+    background: #f2dbaa;
+    color: #282039;
+  }
+  .workshop-editor-grid[data-mobile-pane="content"] :where(.wedding-live, .studio-side),
+  .workshop-editor-grid[data-mobile-pane="preview"] :where(.wedding-details, .studio-side),
+  .workshop-editor-grid[data-mobile-pane="design"] :where(.wedding-details, .wedding-live) {
+    display: none;
+  }
+}

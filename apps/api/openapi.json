@@ -1,0 +1,975 @@
+{
+  "info": {
+    "title": "App API",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "openapi": "3.1.1",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Health check",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth-providers": {
+      "get": {
+        "operationId": "authProviders",
+        "summary": "Sign in methods turned on",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "email",
+                      "google",
+                      "github",
+                      "altivola"
+                    ],
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notes": {
+      "get": {
+        "operationId": "notes.list",
+        "summary": "List my notes",
+        "tags": [
+          "notes"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "body": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "x-native-type": "date"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "body",
+                      "createdAt"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "notes.create",
+        "summary": "Create a note",
+        "tags": [
+          "notes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "x-native-type": "date"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "body",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notes/{id}": {
+      "delete": {
+        "operationId": "notes.delete",
+        "summary": "Delete one of my notes",
+        "tags": [
+          "notes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "deleted"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings": {
+      "post": {
+        "operationId": "weddings.publish",
+        "summary": "Publish an invitation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "object",
+                    "properties": {
+                      "names": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "date": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      "venue": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "story": {
+                        "type": "string",
+                        "maxLength": 5000
+                      },
+                      "theme": {
+                        "enum": [
+                          "garden",
+                          "night",
+                          "print"
+                        ],
+                        "type": "string"
+                      },
+                      "design": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          "type": {
+                            "enum": [
+                              "serif",
+                              "sans",
+                              "italic"
+                            ],
+                            "type": "string"
+                          },
+                          "palette": {
+                            "enum": [
+                              "template",
+                              "cream",
+                              "ink",
+                              "rose"
+                            ],
+                            "type": "string"
+                          },
+                          "cover": {
+                            "enum": [
+                              "poster",
+                              "frame",
+                              "split"
+                            ],
+                            "type": "string"
+                          },
+                          "sections": {
+                            "type": "array",
+                            "maxItems": 5,
+                            "items": {
+                              "enum": [
+                                "story",
+                                "event",
+                                "album",
+                                "note",
+                                "rsvp"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "album": {
+                            "enum": [
+                              "grid",
+                              "filmstrip",
+                              "stack"
+                            ],
+                            "type": "string"
+                          },
+                          "flow": {
+                            "enum": [
+                              "rooms",
+                              "page"
+                            ],
+                            "type": "string"
+                          },
+                          "accent": {
+                            "enum": [
+                              "gold",
+                              "lavender",
+                              "fern"
+                            ],
+                            "type": "string"
+                          },
+                          "gardenMap": {
+                            "enum": [
+                              "twilight",
+                              "ponds",
+                              "orchard",
+                              "city",
+                              "shore"
+                            ],
+                            "type": "string"
+                          },
+                          "gardenCharacter": {
+                            "enum": [
+                              "lantern",
+                              "hare",
+                              "cat"
+                            ],
+                            "type": "string"
+                          },
+                          "sectionStyles": {
+                            "type": "object",
+                            "propertyNames": {
+                              "enum": [
+                                "cover",
+                                "story",
+                                "event",
+                                "album",
+                                "note",
+                                "rsvp"
+                              ],
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                "eyebrow": {
+                                  "type": "string",
+                                  "maxLength": 100
+                                },
+                                "lead": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "layout": {
+                                  "enum": [
+                                    "stack",
+                                    "editorial",
+                                    "framed"
+                                  ],
+                                  "type": "string"
+                                },
+                                "align": {
+                                  "enum": [
+                                    "left",
+                                    "center",
+                                    "right"
+                                  ],
+                                  "type": "string"
+                                },
+                                "mobileAlign": {
+                                  "enum": [
+                                    "left",
+                                    "center",
+                                    "right"
+                                  ],
+                                  "type": "string"
+                                },
+                                "font": {
+                                  "enum": [
+                                    "serif",
+                                    "sans",
+                                    "italic"
+                                  ],
+                                  "type": "string"
+                                },
+                                "surface": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9a-f]{6}$"
+                                },
+                                "ink": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9a-f]{6}$"
+                                },
+                                "spacing": {
+                                  "type": "integer",
+                                  "minimum": 8,
+                                  "maximum": 88
+                                },
+                                "titleScale": {
+                                  "type": "integer",
+                                  "minimum": 65,
+                                  "maximum": 160
+                                }
+                              }
+                            }
+                          },
+                          "sectionAlign": {
+                            "type": "object",
+                            "propertyNames": {
+                              "enum": [
+                                "story",
+                                "event",
+                                "album",
+                                "note",
+                                "rsvp"
+                              ],
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "enum": [
+                                "left",
+                                "center"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "type",
+                          "palette",
+                          "cover",
+                          "sections",
+                          "note"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "names",
+                      "date",
+                      "venue",
+                      "story",
+                      "theme"
+                    ]
+                  },
+                  "guests": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "photos": {
+                    "type": "array",
+                    "maxItems": 9,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "jpeg": {
+                          "type": "string",
+                          "maxLength": 600000,
+                          "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                        },
+                        "caption": {
+                          "type": "string",
+                          "maxLength": 180
+                        },
+                        "cover": {
+                          "type": "boolean"
+                        },
+                        "background": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "jpeg",
+                        "caption",
+                        "cover"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "content",
+                  "guests"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "guests": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "guests"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings/{weddingId}/guests/{guestId}": {
+      "get": {
+        "operationId": "weddings.read",
+        "summary": "Read a guest invitation",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "guestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "object",
+                      "properties": {
+                        "names": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "date": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "venue": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "story": {
+                          "type": "string",
+                          "maxLength": 5000
+                        },
+                        "theme": {
+                          "enum": [
+                            "garden",
+                            "night",
+                            "print"
+                          ],
+                          "type": "string"
+                        },
+                        "design": {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            "y": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            "type": {
+                              "enum": [
+                                "serif",
+                                "sans",
+                                "italic"
+                              ],
+                              "type": "string"
+                            },
+                            "palette": {
+                              "enum": [
+                                "template",
+                                "cream",
+                                "ink",
+                                "rose"
+                              ],
+                              "type": "string"
+                            },
+                            "cover": {
+                              "enum": [
+                                "poster",
+                                "frame",
+                                "split"
+                              ],
+                              "type": "string"
+                            },
+                            "sections": {
+                              "type": "array",
+                              "maxItems": 5,
+                              "items": {
+                                "enum": [
+                                  "story",
+                                  "event",
+                                  "album",
+                                  "note",
+                                  "rsvp"
+                                ],
+                                "type": "string"
+                              }
+                            },
+                            "note": {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            "album": {
+                              "enum": [
+                                "grid",
+                                "filmstrip",
+                                "stack"
+                              ],
+                              "type": "string"
+                            },
+                            "flow": {
+                              "enum": [
+                                "rooms",
+                                "page"
+                              ],
+                              "type": "string"
+                            },
+                            "accent": {
+                              "enum": [
+                                "gold",
+                                "lavender",
+                                "fern"
+                              ],
+                              "type": "string"
+                            },
+                            "gardenMap": {
+                              "enum": [
+                                "twilight",
+                                "ponds",
+                                "orchard",
+                                "city",
+                                "shore"
+                              ],
+                              "type": "string"
+                            },
+                            "gardenCharacter": {
+                              "enum": [
+                                "lantern",
+                                "hare",
+                                "cat"
+                              ],
+                              "type": "string"
+                            },
+                            "sectionStyles": {
+                              "type": "object",
+                              "propertyNames": {
+                                "enum": [
+                                  "cover",
+                                  "story",
+                                  "event",
+                                  "album",
+                                  "note",
+                                  "rsvp"
+                                ],
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "title": {
+                                    "type": "string",
+                                    "maxLength": 120
+                                  },
+                                  "eyebrow": {
+                                    "type": "string",
+                                    "maxLength": 100
+                                  },
+                                  "lead": {
+                                    "type": "string",
+                                    "maxLength": 500
+                                  },
+                                  "layout": {
+                                    "enum": [
+                                      "stack",
+                                      "editorial",
+                                      "framed"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "align": {
+                                    "enum": [
+                                      "left",
+                                      "center",
+                                      "right"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "mobileAlign": {
+                                    "enum": [
+                                      "left",
+                                      "center",
+                                      "right"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "font": {
+                                    "enum": [
+                                      "serif",
+                                      "sans",
+                                      "italic"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "surface": {
+                                    "type": "string",
+                                    "pattern": "^#[0-9a-f]{6}$"
+                                  },
+                                  "ink": {
+                                    "type": "string",
+                                    "pattern": "^#[0-9a-f]{6}$"
+                                  },
+                                  "spacing": {
+                                    "type": "integer",
+                                    "minimum": 8,
+                                    "maximum": 88
+                                  },
+                                  "titleScale": {
+                                    "type": "integer",
+                                    "minimum": 65,
+                                    "maximum": 160
+                                  }
+                                }
+                              }
+                            },
+                            "sectionAlign": {
+                              "type": "object",
+                              "propertyNames": {
+                                "enum": [
+                                  "story",
+                                  "event",
+                                  "album",
+                                  "note",
+                                  "rsvp"
+                                ],
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "enum": [
+                                  "left",
+                                  "center"
+                                ],
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y",
+                            "type",
+                            "palette",
+                            "cover",
+                            "sections",
+                            "note"
+                          ]
+                        },
+                        "photos": {
+                          "type": "array",
+                          "maxItems": 9,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "caption": {
+                                "type": "string"
+                              },
+                              "cover": {
+                                "type": "boolean"
+                              },
+                              "background": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "caption",
+                              "cover"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "names",
+                        "date",
+                        "venue",
+                        "story",
+                        "theme"
+                      ]
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "attending": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "content",
+                    "name",
+                    "attending"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings/{weddingId}/guests/{guestId}/rsvp": {
+      "post": {
+        "operationId": "weddings.rsvp",
+        "summary": "Save a guest RSVP",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "guestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attending": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "attending"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "attending": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "attending"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

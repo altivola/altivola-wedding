@@ -1,0 +1,4 @@
+CREATE TABLE wedding_media (
+  key TEXT PRIMARY KEY NOT NULL,
+  jpeg TEXT NOT NULL
+) STRICT;

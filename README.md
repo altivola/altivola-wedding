@@ -52,6 +52,11 @@ for the local Workers runtime. Keep the account on Workers Free to enforce D1's
 free limits. Once those limits are reached, D1 operations fail until quota or
 storage becomes available.
 
+Pushes to `main` deploy after CI checks when the repository variable `DEPLOY` is
+`cloudflare`. CI reads production configuration from the private Altivola
+secrets repository, applies Postgres and D1 migrations, and deploys the
+Worker with its runtime secrets.
+
 ## Commands
 
 | Command                                   | What it does                                                            |

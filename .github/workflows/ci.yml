@@ -58,6 +58,7 @@ jobs:
           repository: altivola/secrets
           token: ${{ secrets.SECRETS_REPO_TOKEN }}
           path: .secrets
+          persist-credentials: false
 
       - name: Load deploy settings
         run: |
@@ -93,8 +94,12 @@ jobs:
           echo "::add-mask::$url"
           pnpm exec wrangler hyperdrive update "$id" --connection-string="$url" > /dev/null
 
-      - name: Deploy the Worker (web + API)
-        run: pnpm --filter @app/server run deploy
+      - name: Apply D1 photo migrations
+        working-directory: apps/api
+        run: pnpm exec wrangler d1 migrations apply altivola-wedding-media --remote
 
-      - name: Upload Worker secrets
-        run: pnpm secrets:push
+      - name: Build web assets
+        run: pnpm --filter @app/web build
+
+      - name: Deploy the Worker and its secrets
+        run: node scripts/secrets.ts deploy

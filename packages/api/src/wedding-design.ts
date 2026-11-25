@@ -39,8 +39,29 @@ export type SectionStyle = {
   spacing?: number
   titleScale?: number
 }
-export type ScheduleItem = { id: string; time: string; title: string; detail: string }
+export type ScheduleItem = {
+  id: string
+  time: string
+  title: string
+  detail: string
+  date?: string
+  startsAt?: string
+  endsAt?: string
+  venue?: string
+  maps?: string
+}
 export const maxScheduleItems = 8
+export const weddingFrames = ['plain', 'rounded', 'double'] as const
+export const weddingDividers = ['plain', 'line', 'diamond'] as const
+export const weddingDecorations = ['plain', 'petals', 'stars'] as const
+
+export type WeddingExtras = {
+  partners?: { name: string; parents: string }[]
+  milestones?: { id: string; date: string; title: string; location: string; story: string }[]
+  quote?: string
+  livestream?: string
+  gifts?: { id: string; label: string; account: string }[]
+}
 
 export type WeddingDesign = {
   x: number
@@ -53,6 +74,10 @@ export type WeddingDesign = {
   album?: 'grid' | 'filmstrip' | 'stack'
   template?: WeddingTemplate
   schedule?: ScheduleItem[]
+  frame?: (typeof weddingFrames)[number]
+  divider?: (typeof weddingDividers)[number]
+  decoration?: (typeof weddingDecorations)[number]
+  extras?: WeddingExtras
   flow?: (typeof weddingFlows)[number]
   accent?: 'gold' | 'lavender' | 'fern'
   gardenMap?: GardenMap

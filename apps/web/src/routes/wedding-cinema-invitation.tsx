@@ -1,9 +1,10 @@
-import type { WeddingSection } from '@app/api/wedding-design'
+import type { WeddingDesign, WeddingSection } from '@app/api/wedding-design'
 import { ArrowRight, Bell, Film, MapPin, ScanLine, Ticket, Volume2, VolumeX } from 'lucide-react'
 import { type PointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { createCinemaAmbience } from './wedding-cinema-ambience'
 import { buildCinemaFrame, type CinemaFrame } from './wedding-cinema-film'
 import { type CinemaRoom, mountCinema } from './wedding-cinema-renderer'
+import { WeddingDecoration } from './wedding-custom-content'
 import { createGardenAudio } from './wedding-garden-audio'
 import './wedding-cinema.css'
 
@@ -14,6 +15,8 @@ const rooms = {
 } satisfies Record<CinemaRoom, string>
 
 type CinemaProps = {
+  frame?: WeddingDesign['frame']
+  decoration?: WeddingDesign['decoration']
   names: string
   recipient: string
   date: string
@@ -33,6 +36,8 @@ type CinemaProps = {
 
 export function CinemaInvitation({
   names,
+  frame,
+  decoration,
   recipient,
   date,
   venue,
@@ -217,7 +222,14 @@ export function CinemaInvitation({
   const selected = sections.find(({ id }) => id === activeSection)
 
   return (
-    <article ref={viewport} className="cinema-invitation" data-room={room} data-renderer={webgl ? 'webgl' : 'fallback'}>
+    <article
+      ref={viewport}
+      className="cinema-invitation"
+      data-wedding-frame={frame}
+      data-wedding-decoration={decoration}
+      data-room={room}
+      data-renderer={webgl ? 'webgl' : 'fallback'}
+    >
       <div className="cinema-plate" aria-hidden="true" />
       <canvas ref={canvas} className="cinema-canvas" />
       <div className="cinema-shade" aria-hidden="true" />
@@ -313,6 +325,7 @@ export function CinemaInvitation({
             <p className="cinema-tip">Geser layar. Sentuh genangannya.</p>
           </div>
         )}
+        <WeddingDecoration choice={decoration} />
         {room === 'lobby' && (
           <div className="cinema-ticket">
             <div className="cinema-ticket-edge">
@@ -334,6 +347,9 @@ export function CinemaInvitation({
                 >
                   <MapPin size={15} aria-hidden="true" /> Lihat lokasi
                 </a>
+                <button type="button" onClick={() => openProgram('event')}>
+                  Detail acara
+                </button>
                 <button type="button" className="cinema-primary" onClick={() => visit('auditorium')}>
                   Masuk auditorium <ArrowRight size={17} aria-hidden="true" />
                 </button>

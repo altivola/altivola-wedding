@@ -1,6 +1,13 @@
 import { useState } from 'react'
 
-export type DraftPhoto = { id: string; jpeg: string; caption: string; cover: boolean; background?: boolean }
+export type DraftPhoto = {
+  id: string
+  jpeg: string
+  caption: string
+  cover: boolean
+  background?: boolean
+  profileBackground?: boolean
+}
 const imageSource = (jpeg: string) => `data:image/jpeg;base64,${jpeg}`
 
 export { imageSource }

@@ -7,10 +7,14 @@ import { authClient } from '@/lib/auth'
 import { client, orpc } from '@/lib/orpc'
 import { rootRoute } from './root'
 import { compress, type DraftPhoto, imageSource, WeddingAlbum } from './wedding-album'
+import { type DraftAudio, WeddingAudioEditor, weddingAudioSource } from './wedding-custom-audio'
+import { WeddingContentEditor } from './wedding-custom-content'
 import { DesignControls, DesignedInvitation } from './wedding-designer'
 import { applyTemplate, TemplateCards, type Theme, templateSearch, themes, WeddingGallery } from './wedding-gallery'
 import { SectionInspector, studioLabels } from './wedding-inspector'
+import { WeddingGuestManager, WeddingIssueReport, WeddingOverview } from './wedding-manage'
 import { defaultWeddingMusic, WeddingMusicPicker } from './wedding-music'
+import { GuestQr } from './wedding-qr'
 import { ScheduleEditor } from './wedding-template-features'
 import './wedding.css'
 import './wedding-journey.css'
@@ -19,6 +23,7 @@ import './wedding-templates.css'
 import './wedding-scenography.css'
 import './wedding-template-features.css'
 import './wedding-experiences.css'
+import './wedding-manage.css'
 
 type Published = Awaited<ReturnType<typeof client.weddings.publish>>
 
@@ -94,15 +99,23 @@ function WeddingLanding() {
 
 const workshopRooms = {
   studio: 'Studio',
+  overview: 'Ringkasan',
   gallery: 'Template',
   album: 'Foto',
   music: 'Musik',
   send: 'Bagikan',
+  guests: 'Tamu',
+  checkIn: 'Absensi',
 } as const
 type WorkshopRoom = keyof typeof workshopRooms
 type DesignHistory = { past: WeddingDesign[]; present: WeddingDesign; future: WeddingDesign[] }
-type HistoryEdit = { type: 'update'; design: WeddingDesign } | { type: 'undo' } | { type: 'redo' }
+type HistoryEdit =
+  | { type: 'reset'; design: WeddingDesign }
+  | { type: 'update'; design: WeddingDesign }
+  | { type: 'undo' }
+  | { type: 'redo' }
 function changeDesign(history: DesignHistory, edit: HistoryEdit): DesignHistory {
+  if (edit.type === 'reset') return { past: [], present: edit.design, future: [] }
   const { past, present, future } = history
   if (edit.type === 'update') {
     if (edit.design === present) return history
@@ -150,6 +163,12 @@ function WeddingStudio() {
   const [music, setMusic] = useState<InvitationMusic>(defaultWeddingMusic)
   const [photos, setPhotos] = useState<DraftPhoto[]>([])
   const [background, setBackground] = useState<DraftPhoto>()
+  const [profileBackground, setProfileBackground] = useState<DraftPhoto>()
+  const [audio, setAudio] = useState<DraftAudio>()
+  const [draftId, setDraftId] = useState<string>(() => crypto.randomUUID())
+  const [weddingId, setWeddingId] = useState<string>()
+  const [snapshot, setSnapshot] = useState<string>()
+  const [saveMessage, setSaveMessage] = useState('')
   const [backgroundError, setBackgroundError] = useState('')
   const [photosBusy, setPhotosBusy] = useState(false)
   const [published, setPublished] = useState<Published>()
@@ -159,13 +178,23 @@ function WeddingStudio() {
     .split('\n')
     .map((name) => name.trim())
     .filter(Boolean)
-  const preview = { names: names || 'Aruna & Dimas', date, venue, story, theme, design, music }
-  const media = background ? [...photos, background] : photos
+  const preview = {
+    names: names || 'Aruna & Dimas',
+    date,
+    venue,
+    story,
+    theme,
+    design,
+    music,
+    customAudio: audio && { ...audio, src: weddingAudioSource(audio) },
+  }
+  const media = [...photos, ...(background ? [background] : []), ...(profileBackground ? [profileBackground] : [])]
   const previewPhotos = media.map((photo) => ({
     src: imageSource(photo.jpeg),
     caption: photo.caption,
     cover: photo.cover,
     background: photo.background,
+    profileBackground: photo.profileBackground,
   }))
 
   function visit(next: WorkshopRoom) {
@@ -186,34 +215,145 @@ function WeddingStudio() {
     setPhotos(next)
   }
 
+  function draftData() {
+    return {
+      names,
+      date,
+      venue,
+      story,
+      theme,
+      design,
+      music,
+      guests,
+      photos: media.map(({ id: _id, ...photo }) => photo),
+      audio,
+    }
+  }
+
+  function canSwitchDraft() {
+    const hasChanges = snapshot
+      ? JSON.stringify(draftData()) !== snapshot
+      : Boolean(names || date || venue || story || guests || media.length || audio || history.past.length)
+    return !hasChanges || window.confirm('Ada perubahan yang belum disimpan. Pindah undangan?')
+  }
+
+  async function persistDraft() {
+    const data = draftData()
+    await client.weddings.saveDraft({ id: draftId, data })
+    setSnapshot(JSON.stringify(data))
+    return data
+  }
+
+  async function saveCurrentDraft() {
+    setPending(true)
+    setSaveMessage('')
+    try {
+      await persistDraft()
+      setSaveMessage('Draft disimpan.')
+    } catch {
+      setSaveMessage('Draft belum tersimpan. Cek link, potongan musik, dan koneksi.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function loadDraft(data: Awaited<ReturnType<typeof client.weddings.draft>>['data']) {
+    setNames(data.names)
+    setDate(data.date)
+    setVenue(data.venue)
+    setStory(data.story)
+    setGuests(data.guests)
+    const loadedMusic = data.music === undefined ? defaultWeddingMusic : data.music
+    setMusic(loadedMusic)
+    setAudio(data.audio)
+    const loaded = data.photos.map((photo) => ({ ...photo, id: crypto.randomUUID() }))
+    setPhotos(loaded.filter((photo) => !photo.background && !photo.profileBackground))
+    setBackground(loaded.find((photo) => photo.background))
+    setProfileBackground(loaded.find((photo) => photo.profileBackground))
+    const loadedDesign = data.design ?? applyTemplate(defaultWeddingDesign, data.theme)
+    dispatchDesign({ type: 'reset', design: loadedDesign })
+    setSnapshot(
+      JSON.stringify({
+        names: data.names,
+        date: data.date,
+        venue: data.venue,
+        story: data.story,
+        theme: loadedDesign.template ?? 'garden',
+        design: loadedDesign,
+        music: loadedMusic,
+        guests: data.guests,
+        photos: data.photos,
+        audio: data.audio,
+      }),
+    )
+    setPublished(undefined)
+    setError('')
+    setStudioSection('cover')
+  }
+
+  async function openDraft(id: string) {
+    if (!canSwitchDraft()) return
+    setPending(true)
+    setSaveMessage('')
+    try {
+      const result = await client.weddings.draft({ id })
+      loadDraft(result.data)
+      setDraftId(id)
+      setWeddingId(result.weddingId ?? undefined)
+      setSaveMessage('Undangan dibuka.')
+    } catch {
+      setSaveMessage('Undangan belum bisa dibuka.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  function createDraft() {
+    if (!canSwitchDraft()) return
+    loadDraft({ names: '', date: '', venue: '', story: '', theme: preferredTemplate, guests: '', photos: [] })
+    setDraftId(crypto.randomUUID())
+    setWeddingId(undefined)
+    setSnapshot(undefined)
+    setSaveMessage('')
+    setRoom('studio')
+  }
+
   async function publish() {
     if (!names.trim() || !date.trim() || !venue.trim()) {
       setError('Isi nama pasangan, tanggal, dan lokasi di Studio dulu.')
       return
     }
+    if (guestNames.length > 500 || guestNames.some((name) => name.length > 100)) {
+      setError('Maksimal 500 tamu, dengan 100 karakter per nama.')
+      return
+    }
     setPending(true)
     setError('')
     try {
-      setPublished(
-        await client.weddings.publish({
-          content: {
-            names,
-            date,
-            venue,
-            story,
-            theme,
-            design,
-            music: music?.kind === 'openverse' ? { kind: music.kind, id: music.id } : music,
-          },
-          guests: guestNames,
-          photos: media.map(({ jpeg, caption, cover, background }) => ({ jpeg, caption, cover, background })),
-        }),
-      )
+      const data = await persistDraft()
+      const result = await client.weddings.publish({
+        draftId,
+        content: {
+          names,
+          date,
+          venue,
+          story,
+          theme,
+          design,
+          music: audio ? null : music?.kind === 'openverse' ? { kind: music.kind, id: music.id } : music,
+        },
+        guests: guestNames,
+        photos: data.photos,
+        audio,
+      })
+      setPublished(result)
+      setWeddingId(result.id)
+      setSaveMessage('Undangan diterbitkan.')
     } catch (error) {
       setError(
         error instanceof Error && error.message === 'The selected song is unavailable'
           ? 'Lagu yang dipilih sudah tidak tersedia. Pilih lagu lain di tab Musik.'
-          : 'Undangan gagal diterbitkan. Cek koneksi dan isi formulir, lalu coba lagi.',
+          : 'Undangan gagal diterbitkan. Cek isi formulir, link, dan koneksi.',
       )
     } finally {
       setPending(false)
@@ -226,9 +366,9 @@ function WeddingStudio() {
         content={preview}
         recipient={guestNames[0] || 'Tamu undangan'}
         photos={previewPhotos}
+        muteMusic
         onBack={() => {
           setShowGuestPreview(false)
-          visit('studio')
         }}
       />
     )
@@ -276,6 +416,41 @@ function WeddingStudio() {
         </nav>
       </header>
       <div className="workshop-room" id="workshop-room" tabIndex={-1} key={room}>
+        {room === 'overview' && (
+          <WeddingOverview
+            currentId={draftId}
+            weddingId={weddingId}
+            onOpen={openDraft}
+            onCreate={createDraft}
+            onSave={saveCurrentDraft}
+            onPreview={() => setShowGuestPreview(true)}
+            pending={pending || photosBusy}
+            saveMessage={saveMessage}
+            preview={
+              <DesignedInvitation
+                key={draftId}
+                content={preview}
+                photos={previewPhotos}
+                recipient="Tamu undangan"
+                rsvp={null}
+                journey
+                muteMusic
+              />
+            }
+          />
+        )}
+        {(room === 'guests' || room === 'checkIn') &&
+          (weddingId ? (
+            <WeddingGuestManager key={weddingId} id={weddingId} checkIn={room === 'checkIn'} />
+          ) : (
+            <section className="journey-panel wedding-manage">
+              <h2>{room === 'guests' ? 'Daftar tamu' : 'Absensi tamu'}</h2>
+              <p>Terbitkan undangan untuk mulai kelola tamu.</p>
+              <button type="button" onClick={() => visit('send')}>
+                Buka Bagikan
+              </button>
+            </section>
+          ))}
         {room === 'gallery' && (
           <WeddingGallery
             initialTheme={theme}
@@ -340,12 +515,24 @@ function WeddingStudio() {
                   Cerita pasangan
                   <textarea maxLength={5000} value={story} onChange={(e) => setStory(e.target.value)} />
                 </label>
-                {(theme === 'weekend' || theme === 'lantern') && (
-                  <ScheduleEditor
-                    items={design.schedule ?? []}
-                    onChange={(schedule) => setDesign({ ...design, schedule })}
-                  />
-                )}
+                <ScheduleEditor
+                  items={design.schedule ?? []}
+                  onChange={(schedule) => setDesign({ ...design, schedule })}
+                />
+                <WeddingContentEditor
+                  value={design.extras}
+                  onChange={(extras) =>
+                    setDesign({
+                      ...design,
+                      extras,
+                      sections: design.sections.includes('story') ? design.sections : ['story', ...design.sections],
+                    })
+                  }
+                />
+                <button type="button" disabled={pending || photosBusy} onClick={() => void saveCurrentDraft()}>
+                  Simpan draft
+                </button>
+                {saveMessage && <p role="status">{saveMessage}</p>}
                 <div className="workshop-doors">
                   <button type="button" onClick={() => visit('album')}>
                     Atur foto
@@ -453,46 +640,25 @@ function WeddingStudio() {
         {room === 'album' && (
           <div className="workshop-album-grid wedding-workspace">
             <div>
-              <section className="journey-panel background-picker">
-                <h3>Background undangan</h3>
-                <label>
-                  Upload background
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={photosBusy}
-                    onChange={async (event) => {
-                      const file = event.currentTarget.files?.[0]
-                      event.currentTarget.value = ''
-                      if (!file) return
-                      setPhotosBusy(true)
-                      setBackgroundError('')
-                      try {
-                        setBackground({
-                          id: crypto.randomUUID(),
-                          jpeg: await compress(file),
-                          caption: '',
-                          cover: false,
-                          background: true,
-                        })
-                      } catch {
-                        setBackgroundError('Background belum bisa dibuka. Coba file gambar di bawah 25 MB.')
-                      } finally {
-                        setPhotosBusy(false)
-                      }
-                    }}
-                  />
-                </label>
-                {background && (
-                  <>
-                    <img src={imageSource(background.jpeg)} alt="Background terpilih" />
-                    <button disabled={photosBusy} type="button" onClick={() => setBackground(undefined)}>
-                      Hapus background
-                    </button>
-                  </>
-                )}
-                {backgroundError && <p role="alert">{backgroundError}</p>}
-              </section>
+              <BackgroundPicker
+                title="Background sampul"
+                photo={background}
+                busy={photosBusy}
+                onBusy={setPhotosBusy}
+                onError={setBackgroundError}
+                onChange={setBackground}
+              />
+              <BackgroundPicker
+                title="Background profil"
+                photo={profileBackground}
+                busy={photosBusy}
+                onBusy={setPhotosBusy}
+                onError={setBackgroundError}
+                onChange={(photo) =>
+                  setProfileBackground(photo && { ...photo, background: undefined, profileBackground: true })
+                }
+              />
+              {backgroundError && <p role="alert">{backgroundError}</p>}
               <WeddingAlbum photos={photos} onChange={updatePhotos} onBusy={setPhotosBusy} />
             </div>
             <DesignedInvitation
@@ -500,10 +666,23 @@ function WeddingStudio() {
               recipient={guestNames[0] || 'Tamu undangan'}
               photos={previewPhotos}
               rsvp={<p>Hadir · Berhalangan</p>}
+              muteMusic
             />
           </div>
         )}
-        {room === 'music' && <WeddingMusicPicker theme={theme} value={music} onChange={setMusic} />}
+        {room === 'music' && (
+          <div className="wedding-manage wedding-music-workspace">
+            <WeddingAudioEditor audio={audio} onChange={setAudio} onBusy={setPhotosBusy} />
+            <WeddingMusicPicker
+              theme={theme}
+              value={music}
+              onChange={(choice) => {
+                setMusic(choice)
+                setAudio(undefined)
+              }}
+            />
+          </div>
+        )}
         {room === 'send' && (
           <section className="wedding-links journey-panel">
             <h2>Bagikan undangan</h2>
@@ -513,15 +692,22 @@ function WeddingStudio() {
                 void publish()
               }}
             >
-              <label>
-                Daftar tamu, satu nama per baris
-                <textarea required value={guests} onChange={(event) => setGuests(event.target.value)} />
-              </label>
-              <button type="submit" disabled={pending || guestNames.length === 0}>
-                {pending ? 'Menerbitkan…' : 'Terbitkan undangan'}
+              {!weddingId && (
+                <label>
+                  Daftar tamu, satu nama per baris
+                  <textarea maxLength={51000} value={guests} onChange={(event) => setGuests(event.target.value)} />
+                </label>
+              )}
+              <button type="submit" disabled={pending || photosBusy}>
+                {pending ? 'Menerbitkan…' : weddingId ? 'Terbitkan perubahan' : 'Terbitkan undangan'}
               </button>
               {error && <p role="alert">{error}</p>}
             </form>
+            {weddingId && (
+              <button type="button" disabled={pending} onClick={() => visit('guests')}>
+                Kelola tamu dan link
+              </button>
+            )}
             {published && (
               <>
                 <h3>Link tamu</h3>
@@ -546,6 +732,7 @@ function WeddingStudio() {
           </section>
         )}
       </div>
+      <WeddingIssueReport page={`/studio/${room}`} />
     </main>
   )
 }
@@ -561,6 +748,64 @@ const sampleInvite = {
     sections: ['story', 'event', 'album', 'rsvp'],
     gardenMap: 'twilight',
   } satisfies WeddingDesign,
+}
+
+function BackgroundPicker({
+  title,
+  photo,
+  busy,
+  onBusy,
+  onError,
+  onChange,
+}: {
+  title: string
+  photo?: DraftPhoto
+  busy: boolean
+  onBusy: (busy: boolean) => void
+  onError: (message: string) => void
+  onChange: (photo?: DraftPhoto) => void
+}) {
+  return (
+    <section className="journey-panel background-picker">
+      <h3>{title}</h3>
+      <label>
+        Upload {title.toLowerCase()}
+        <input
+          type="file"
+          accept="image/*"
+          disabled={busy}
+          onChange={async (event) => {
+            const file = event.currentTarget.files?.[0]
+            event.currentTarget.value = ''
+            if (!file) return
+            onBusy(true)
+            onError('')
+            try {
+              onChange({
+                id: crypto.randomUUID(),
+                jpeg: await compress(file),
+                caption: '',
+                cover: false,
+                background: true,
+              })
+            } catch {
+              onError('Background belum bisa dibuka. Coba file gambar di bawah 25 MB.')
+            } finally {
+              onBusy(false)
+            }
+          }}
+        />
+      </label>
+      {photo && (
+        <>
+          <img src={imageSource(photo.jpeg)} alt={title} />
+          <button disabled={busy} type="button" onClick={() => onChange()}>
+            Hapus background
+          </button>
+        </>
+      )}
+    </section>
+  )
 }
 
 function ExamplePage() {
@@ -601,9 +846,10 @@ function ExamplePage() {
 
 type PreviewProps = Pick<ComponentProps<typeof DesignedInvitation>, 'content' | 'recipient' | 'photos'> & {
   onBack?: () => void
+  muteMusic?: boolean
 }
 
-function WeddingResultPreview({ content, recipient, photos, onBack }: PreviewProps) {
+function WeddingResultPreview({ content, recipient, photos, onBack, muteMusic }: PreviewProps) {
   const [answer, setAnswer] = useState<string>()
 
   useEffect(() => {
@@ -631,6 +877,7 @@ function WeddingResultPreview({ content, recipient, photos, onBack }: PreviewPro
       </header>
       <DesignedInvitation
         content={content}
+        muteMusic={muteMusic}
         recipient={recipient}
         photos={photos}
         journey
@@ -676,7 +923,13 @@ function GuestPage() {
   return (
     <main className="wedding-guest">
       <DesignedInvitation
-        content={invitation.data.content}
+        content={{
+          ...invitation.data.content,
+          customAudio: invitation.data.content.audio && {
+            ...invitation.data.content.audio,
+            src: `/api/wedding-audio/${params.weddingId}/${invitation.data.content.audio.id}`,
+          },
+        }}
         recipient={invitation.data.name}
         rsvpSaved={attending !== null}
         journey
@@ -686,6 +939,7 @@ function GuestPage() {
             caption: photo.caption,
             cover: photo.cover,
             background: photo.background,
+            profileBackground: photo.profileBackground,
           })) ?? []
         }
         rsvp={
@@ -698,6 +952,10 @@ function GuestPage() {
             </button>
             {attending !== null && <p role="status">Jawaban tersimpan: {attending ? 'Hadir' : 'Berhalangan'}.</p>}
             {error && <p role="alert">{error}</p>}
+            <details>
+              <summary>Kode QR absensi</summary>
+              <GuestQr weddingId={params.weddingId} guestId={params.guestId} />
+            </details>
           </>
         }
       />

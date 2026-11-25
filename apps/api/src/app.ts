@@ -49,7 +49,7 @@ export function createApp(deps: Deps) {
       select 1 from weddings where id = ${weddingId} and content->'photos' @> ${context.sql.json([{ id: photoId }])}
     `
     if (!published) return c.notFound()
-    const image = await context.media.get(`${weddingId}/${photoId}`)
+    const image = (await context.media.get(`assets/${photoId}`)) ?? (await context.media.get(`${weddingId}/${photoId}`))
     if (!image) return c.notFound()
     return new Response(image, {
       headers: {
@@ -59,8 +59,41 @@ export function createApp(deps: Deps) {
       },
     })
   })
-  app.use('/rpc/weddings/publish', bodyLimit({ maxSize: 5_600_000 }))
-  app.use('/api/weddings', bodyLimit({ maxSize: 5_600_000 }))
+  app.get('/api/wedding-audio/:weddingId/:audioId', async (c) => {
+    const { weddingId, audioId } = c.req.param()
+    if (!context.media || !mediaId.test(weddingId) || !mediaId.test(audioId)) return c.notFound()
+    const [published] = await context.sql`select 1 from weddings
+      where id = ${weddingId} and content->'audio'->>'id' = ${audioId}`
+    if (!published) return c.notFound()
+    const audio = await context.media.get(`audio/${audioId}`)
+    if (!audio) return c.notFound()
+    const headers = new Headers({
+      'Content-Type': 'audio/mpeg',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'private, max-age=3600',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    const range = c.req.header('range')
+    if (range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range)
+      const start = match?.[1] ? Number(match[1]) : Math.max(0, audio.length - Number(match?.[2]))
+      const end = match?.[1] && match[2] ? Math.min(Number(match[2]), audio.length - 1) : audio.length - 1
+      if (!match || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end) {
+        headers.set('Content-Range', `bytes */${audio.length}`)
+        return new Response(null, { status: 416, headers })
+      }
+      headers.set('Content-Range', `bytes ${start}-${end}/${audio.length}`)
+      headers.set('Content-Length', String(end - start + 1))
+      return new Response(audio.subarray(start, end + 1), { status: 206, headers })
+    }
+    headers.set('Content-Length', String(audio.length))
+    return new Response(audio, { headers })
+  })
+  const studioBodyLimit = bodyLimit({ maxSize: 8_000_000 })
+  app.use('/rpc/weddings/publish', studioBodyLimit)
+  app.use('/rpc/weddings/saveDraft', studioBodyLimit)
+  app.use('/api/weddings', studioBodyLimit)
+  app.use('/api/weddings/drafts/:id', studioBodyLimit)
 
   app.on(['GET', 'POST'], '/api/auth/*', (c) => context.auth.handler(c.req.raw))
 

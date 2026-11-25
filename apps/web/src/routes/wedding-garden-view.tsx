@@ -12,6 +12,7 @@ export function WeddingGarden({
   onExit,
   album,
   event,
+  eventDetails,
   rsvp,
   rsvpSaved = false,
   soundtrack,
@@ -23,6 +24,7 @@ export function WeddingGarden({
   onExit?: () => void
   album?: GardenPhoto[]
   event?: { date: string; venue: string }
+  eventDetails?: ReactNode
   rsvp?: ReactNode
   rsvpSaved?: boolean
   soundtrack?: ReactNode
@@ -366,6 +368,7 @@ export function WeddingGarden({
               >
                 Buka di Maps
               </a>
+              {eventDetails}
             </>
           )}
           {station === 'rsvp' && (

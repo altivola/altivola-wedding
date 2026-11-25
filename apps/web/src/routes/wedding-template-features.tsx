@@ -1,6 +1,7 @@
 import { maxScheduleItems, type ScheduleItem, type WeddingDesign } from '@app/api/wedding-design'
 import { ArrowLeft, ArrowRight, ArrowUpRight, X } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { displayWeddingDate } from './wedding-custom-content'
 
 export function InvitationEnvelope({
   recipient,
@@ -67,6 +68,43 @@ export function ScheduleEditor({
               onChange={(e) => update(item.id, { detail: e.target.value })}
             />
           </label>
+          <label>
+            Tanggal{' '}
+            <input type="date" value={item.date ?? ''} onChange={(e) => update(item.id, { date: e.target.value })} />
+          </label>
+          <label>
+            Mulai (WIB){' '}
+            <input
+              type="time"
+              value={item.startsAt ?? ''}
+              onChange={(e) => update(item.id, { startsAt: e.target.value })}
+            />
+          </label>
+          <label>
+            Selesai (WIB){' '}
+            <input
+              type="time"
+              value={item.endsAt ?? ''}
+              onChange={(e) => update(item.id, { endsAt: e.target.value })}
+            />
+          </label>
+          <label>
+            Lokasi{' '}
+            <input
+              maxLength={200}
+              value={item.venue ?? ''}
+              onChange={(e) => update(item.id, { venue: e.target.value })}
+            />
+          </label>
+          <label>
+            Link Maps{' '}
+            <input
+              type="url"
+              maxLength={600}
+              value={item.maps ?? ''}
+              onChange={(e) => update(item.id, { maps: e.target.value })}
+            />
+          </label>
           <button type="button" onClick={() => onChange(items.filter(({ id }) => id !== item.id))}>
             Hapus agenda {index + 1}
           </button>
@@ -94,11 +132,63 @@ export function InvitationSchedule({ items }: { items: ScheduleItem[] }) {
           {item.time && <span>{item.time}</span>}
           <div>
             <strong>{item.title}</strong>
+            {item.date && (
+              <p>
+                <time dateTime={item.date}>{displayWeddingDate(item.date)}</time>
+              </p>
+            )}
+            {item.startsAt && (
+              <p>
+                {item.startsAt}
+                {item.endsAt && ` – ${item.endsAt}`} WIB
+              </p>
+            )}
+            {item.venue && <p>{item.venue}</p>}
             {item.detail && <p>{item.detail}</p>}
+            <AgendaLinks item={item} />
           </div>
         </li>
       ))}
     </ol>
+  )
+}
+
+function AgendaLinks({ item }: { item: ScheduleItem }) {
+  const { date, startsAt, endsAt, title, detail, venue, maps } = item
+  const validMaps = maps && /^https?:\/\//i.test(maps) ? maps : undefined
+  const mapUrl = validMaps || (venue && `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`)
+  const calendar = new URL('https://calendar.google.com/calendar/render')
+  const start = date && startsAt ? new Date(`${date}T${startsAt}:00+07:00`) : null
+  const end = date && endsAt ? new Date(`${date}T${endsAt}:00+07:00`) : null
+  if (start && end && end <= start) end.setUTCDate(end.getUTCDate() + 1)
+  const nextDay = date ? new Date(`${date}T00:00:00Z`) : null
+  nextDay?.setUTCDate(nextDay.getUTCDate() + 1)
+  if (date && nextDay) {
+    const stamp = (value: Date) => value.toISOString().replace(/[-:]|\.000/g, '')
+    calendar.search = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: title,
+      details: detail,
+      location: venue ?? '',
+      ctz: 'Asia/Jakarta',
+      dates: start
+        ? `${stamp(start)}/${stamp(end ?? new Date(start.getTime() + 3_600_000))}`
+        : `${date.replaceAll('-', '')}/${nextDay.toISOString().slice(0, 10).replaceAll('-', '')}`,
+    }).toString()
+  }
+  return (
+    <div className="wedding-agenda-links">
+      {mapUrl && (
+        <a href={mapUrl} target="_blank" rel="noreferrer">
+          Buka Maps
+        </a>
+      )}
+      {date && (
+        <a href={calendar.href} target="_blank" rel="noreferrer">
+          Simpan ke Kalender
+        </a>
+      )}
+    </div>
   )
 }
 

@@ -8,11 +8,16 @@ import {
   type StudioSection,
   type WeddingDesign,
   type WeddingSection,
+  weddingDecorations,
+  weddingDividers,
   weddingFlows,
+  weddingFrames,
   weddingSections,
 } from '@app/api/wedding-design'
 import { ArrowDown, ArrowUp, GripVertical, Move, X } from 'lucide-react'
 import { type CSSProperties, lazy, type PointerEvent, type ReactNode, Suspense, useRef, useState } from 'react'
+import { type CustomAudio, WeddingAudioPlayer } from './wedding-custom-audio'
+import { WeddingDecoration, WeddingEventExtras, WeddingStoryExtras } from './wedding-custom-content'
 import { ExperienceNav, ExperienceOpening, InvitationTown, ReplayOpening } from './wedding-experiences'
 import { applyTemplate, type Theme, themes } from './wedding-gallery'
 import { gardenCharacterNames, gardenMapNames } from './wedding-garden-options'
@@ -129,6 +134,45 @@ export function DesignControls({
             <option value="cream">Krem</option>
             <option value="ink">Biru malam</option>
             <option value="rose">Mawar</option>
+          </select>
+        </label>
+        <label>
+          Frame foto
+          <select
+            value={design.frame ?? 'plain'}
+            onChange={(event) =>
+              onChange({ ...design, frame: weddingFrames.find((value) => value === event.target.value) })
+            }
+          >
+            <option value="plain">Tanpa frame</option>
+            <option value="rounded">Sudut lengkung</option>
+            <option value="double">Garis ganda</option>
+          </select>
+        </label>
+        <label>
+          Ornamen pembatas
+          <select
+            value={design.divider ?? 'plain'}
+            onChange={(event) =>
+              onChange({ ...design, divider: weddingDividers.find((value) => value === event.target.value) })
+            }
+          >
+            <option value="plain">Tanpa ornamen</option>
+            <option value="line">Garis tipis</option>
+            <option value="diamond">Wajik</option>
+          </select>
+        </label>
+        <label>
+          Dekorasi bergerak
+          <select
+            value={design.decoration ?? 'plain'}
+            onChange={(event) =>
+              onChange({ ...design, decoration: weddingDecorations.find((value) => value === event.target.value) })
+            }
+          >
+            <option value="plain">Mati</option>
+            <option value="petals">Kelopak</option>
+            <option value="stars">Bintang</option>
           </select>
         </label>
         <label>
@@ -340,6 +384,7 @@ type DesignedContent = {
   story: string
   design?: WeddingDesign
   music?: InvitationMusic
+  customAudio?: CustomAudio & { src: string }
 }
 
 export function DesignedInvitation({
@@ -350,6 +395,7 @@ export function DesignedInvitation({
   rsvpSaved,
   photos = [],
   journey = false,
+  muteMusic = false,
 }: {
   content: DesignedContent
   recipient: string
@@ -360,50 +406,63 @@ export function DesignedInvitation({
   }
   rsvp: ReactNode
   rsvpSaved?: boolean
-  photos?: { src: string; caption: string; cover: boolean; background?: boolean }[]
+  photos?: { src: string; caption: string; cover: boolean; background?: boolean; profileBackground?: boolean }[]
   journey?: boolean
+  muteMusic?: boolean
 }) {
   const cover = useRef<HTMLDivElement>(null)
   const chapterHeading = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null)
   const design = content.design ?? defaultWeddingDesign
-  const song = editing ? null : songDetails(content.music)
+  const uploadedAudio = editing || muteMusic ? undefined : content.customAudio
+  const song = editing || muteMusic || uploadedAudio ? null : songDetails(content.music)
   const player = useMusicPlayer(true, song?.src)
-  const soundControls = song && (
-    <div className="invitation-soundtrack">
-      <button type="button" aria-pressed={player.playing === song.src} onClick={() => void player.toggle(song.src)}>
-        {player.playing === song.src ? 'Jeda musik' : 'Putar musik'}
-      </button>
-      <span>{song.title}</span>
-      <a href={song.source} target="_blank" rel="noreferrer">
-        {song.artist || 'Freesound'} · {song.kind === 'recording' ? song.license : 'CC0'}
-      </a>
-      {player.playing === song.src && (
-        <label>
-          Volume
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={player.volume}
-            onChange={(event) => player.changeVolume(event.target.valueAsNumber)}
-          />
-        </label>
-      )}
-      {player.unavailable && <span role="status">Musik belum bisa diputar.</span>}
-    </div>
+  const soundControls = uploadedAudio ? (
+    <WeddingAudioPlayer key={uploadedAudio.src} audio={uploadedAudio} src={uploadedAudio.src} />
+  ) : (
+    song && (
+      <div className="invitation-soundtrack">
+        <button type="button" aria-pressed={player.playing === song.src} onClick={() => void player.toggle(song.src)}>
+          {player.playing === song.src ? 'Jeda musik' : 'Putar musik'}
+        </button>
+        <span>{song.title}</span>
+        <a href={song.source} target="_blank" rel="noreferrer">
+          {song.artist || 'Freesound'} · {song.kind === 'recording' ? song.license : 'CC0'}
+        </a>
+        {player.playing === song.src && (
+          <label>
+            Volume
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={player.volume}
+              onChange={(event) => player.changeVolume(event.target.valueAsNumber)}
+            />
+          </label>
+        )}
+        {player.unavailable && <span role="status">Musik belum bisa diputar.</span>}
+      </div>
+    )
   )
   const [exploring, setExploring] = useState(false)
   const [openingComplete, setOpeningComplete] = useState(false)
   const [room, setRoom] = useState<WeddingSection | 'cover'>('cover')
   const backgroundImage = photos.find((photo) => photo.background)?.src
-  const albumPhotos = photos.filter((photo) => !photo.background)
+  const profileBackground = photos.find((photo) => photo.profileBackground)?.src
+  const albumPhotos = photos.filter((photo) => !photo.background && !photo.profileBackground)
   const coverImage =
     photos.find((photo) => photo.cover)?.src ?? backgroundImage ?? `/wedding/${themes[content.theme].image}.jpg`
+  const extras = design.extras
+  const hasStoryExtras = Boolean(
+    extras?.quote?.trim() ||
+      extras?.partners?.some(({ name, parents }) => name.trim() || parents.trim()) ||
+      extras?.milestones?.some(({ title }) => title.trim()),
+  )
   const available = design.sections.filter((section) => {
     if (editing) return true
-    if (section === 'story') return Boolean(content.story || design.sectionStyles?.story?.lead)
+    if (section === 'story') return Boolean(content.story || design.sectionStyles?.story?.lead || hasStoryExtras)
     if (section === 'note') return Boolean(design.note.trim() || design.sectionStyles?.note?.lead)
     if (section === 'album') return albumPhotos.length > 0
     return true
@@ -453,6 +512,12 @@ export function DesignedInvitation({
         gardenCharacter={design.gardenCharacter}
         album={albumPhotos}
         event={{ date: content.date, venue: content.venue }}
+        eventDetails={
+          <>
+            <InvitationSchedule items={design.schedule ?? []} />
+            <WeddingEventExtras extras={extras} />
+          </>
+        }
         rsvp={rsvp}
         rsvpSaved={rsvpSaved}
         soundtrack={soundControls}
@@ -527,6 +592,8 @@ export function DesignedInvitation({
         ref={(isChapters || isExhibit || isTown) && !editing ? chapterHeading : undefined}
         tabIndex={(isChapters || isExhibit || isTown) && !editing ? -1 : undefined}
         data-section={section}
+        data-wedding-divider={design.divider}
+        data-wedding-frame={design.frame}
         data-composition={style?.layout ?? 'stack'}
         data-studio-font={style?.font}
         data-inspected={editing?.section === section}
@@ -558,12 +625,18 @@ export function DesignedInvitation({
           </div>
         )}
         <div className="studio-section-body">
-          {section === 'story' && <p>{content.story || (editing ? 'Tulis cerita pasangan di Studio.' : '')}</p>}
+          {section === 'story' && (
+            <>
+              {(content.story || editing) && <p>{content.story || 'Tulis cerita pasangan di Studio.'}</p>}
+              <WeddingStoryExtras extras={extras} backdrop={profileBackground} />
+            </>
+          )}
           {section === 'event' && (
             <>
               <p>{content.date || 'Tanggal acara'}</p>
               <p>{content.venue || 'Lokasi acara'}</p>
               {design.schedule && <InvitationSchedule items={design.schedule} />}
+              <WeddingEventExtras extras={extras} />
             </>
           )}
           {section === 'album' &&
@@ -585,6 +658,8 @@ export function DesignedInvitation({
         <CinemaInvitation
           names={personalized(coverStyle?.title?.trim() || content.names)}
           recipient={personalized(coverStyle?.lead?.trim() || 'Untuk {tamu}')}
+          frame={design.frame}
+          decoration={design.decoration}
           date={content.date}
           venue={content.venue}
           eventTitle={design.sectionStyles?.event?.title?.trim() || 'Akad & Resepsi'}
@@ -596,7 +671,7 @@ export function DesignedInvitation({
           music={soundControls}
           story={content.story}
           photos={albumPhotos}
-          leadPhoto={albumPhotos.find((photo) => photo.cover)?.src ?? albumPhotos[0]?.src}
+          leadPhoto={backgroundImage ?? albumPhotos.find((photo) => photo.cover)?.src ?? albumPhotos[0]?.src}
           sections={available
             .filter((section) => section !== 'rsvp')
             .map((section) => ({
@@ -695,11 +770,14 @@ export function DesignedInvitation({
         tabIndex={(isChapters || isLetter || isExhibit || opening) && !editing ? -1 : undefined}
         className="designed-cover"
         data-cover={design.cover}
+        data-wedding-frame={design.frame}
+        data-wedding-decoration={design.decoration}
         data-scene-surface={design.template ? sceneSurface(content.theme, 'cover') : undefined}
         onPointerMove={editing ? undefined : moveScene}
         onPointerDown={editing ? undefined : touchScene}
       >
         <img alt="" src={coverImage} />
+        <WeddingDecoration choice={design.decoration} />
         <div className="design-plane">
           <div
             className="designed-label"

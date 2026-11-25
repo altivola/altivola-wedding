@@ -1,6 +1,6 @@
 # Altivola Wedding
 
-Browse wedding invitation examples without signing in. In the Studio, create an invitation, publish a separate link for each guest, and collect RSVPs. This project uses the Altivola starter.
+Browse wedding invitation examples without signing in. In the Studio, save and reopen drafts, customize an invitation, and publish a separate link for each guest. The guest list supports RSVP filters, CSV import and export, WhatsApp sharing, and QR or manual check-in for the ceremony and reception.
 
 ## What's inside
 
@@ -35,7 +35,8 @@ If port 5432 is already taken, set `DB_PORT` in `.env` and use the same port in 
 
 Select **Musik** in the Studio to preview recordings or search the CC0 recordings
 from Freesound via Openverse. Guests listen directly in the invitation without
-a music service account. New drafts start muted.
+a music service account. You can also upload an MP3 up to 1.3 MB and choose the
+part that loops.
 
 - _Gymnopédie No. 1_ by Erik Satie, [recording by Teknopazzo](https://commons.wikimedia.org/wiki/File:Gymnopedie_No._1..ogg), CC0.
 - _Can't Take Our Love Away_ by [Josh Woodward](https://freemusicarchive.org/music/Josh_Woodward/Crawford_Street/JoshWoodward-CrawfordStreet-03-CantTakeOurLoveAway/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
@@ -59,11 +60,14 @@ The cinema uses live WebGL lighting and ripples with a CSS fallback. Its lobby
 poster and auditorium screen show the couple's actual invitation content. Guests
 can change the reel and ring the usher's bell to open RSVP.
 Creators can reorder sections, change their styles, and add titled text sections.
+The Studio also supports separate cover and profile backgrounds, frames,
+decorations, couple profiles, a relationship timeline, and Maps and Calendar
+links for each event in the rundown.
 In the 3D garden, guests can turn movement effects on independently from the soundtrack.
 
 ## Deployment status
 
-The Worker config requires a project-specific Hyperdrive ID, queue, runtime secrets, and a D1 database bound as `WEDDING_MEDIA`. The D1 database stores only compressed JPEG uploads. Invitation content, guest lists, RSVPs, and accounts use Postgres. The Node API stores uploaded photos in `.wedding-media` by default. Set `WEDDING_MEDIA_DIR` to a persistent directory when running the Node API outside local development.
+The Worker config requires a project-specific Hyperdrive ID, queue, runtime secrets, and a D1 database bound as `WEDDING_MEDIA`. D1 stores published JPEG and MP3 uploads. Postgres stores drafts, published content, guest lists, RSVPs, and accounts. The Node API stores published media in `.wedding-media` by default. Set `WEDDING_MEDIA_DIR` to a persistent directory when running the Node API outside local development.
 
 Apply the photo schema with `pnpm exec wrangler d1 migrations apply
 altivola-wedding-media --remote` from `apps/api` before deploying. Use `--local`

@@ -300,6 +300,1840 @@
         }
       }
     },
+    "/weddings/drafts": {
+      "get": {
+        "operationId": "weddings.drafts",
+        "summary": "List your invitation drafts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "weddingId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "weddingId"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings/drafts/{id}": {
+      "put": {
+        "operationId": "weddings.saveDraft",
+        "summary": "Save your invitation draft",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "names": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "date": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "venue": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "story": {
+                        "type": "string",
+                        "maxLength": 5000
+                      },
+                      "theme": {
+                        "enum": [
+                          "cinema",
+                          "radio",
+                          "lantern",
+                          "town",
+                          "darkroom",
+                          "rain",
+                          "puzzle",
+                          "exhibit",
+                          "garden",
+                          "night",
+                          "print",
+                          "letter",
+                          "weekend",
+                          "keepsake"
+                        ],
+                        "type": "string"
+                      },
+                      "design": {
+                        "type": "object",
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          "type": {
+                            "enum": [
+                              "serif",
+                              "sans",
+                              "italic"
+                            ],
+                            "type": "string"
+                          },
+                          "palette": {
+                            "enum": [
+                              "template",
+                              "cream",
+                              "ink",
+                              "rose"
+                            ],
+                            "type": "string"
+                          },
+                          "cover": {
+                            "enum": [
+                              "poster",
+                              "frame",
+                              "split"
+                            ],
+                            "type": "string"
+                          },
+                          "sections": {
+                            "type": "array",
+                            "maxItems": 11,
+                            "items": {
+                              "enum": [
+                                "story",
+                                "event",
+                                "album",
+                                "note",
+                                "rsvp",
+                                "custom-1",
+                                "custom-2",
+                                "custom-3",
+                                "custom-4",
+                                "custom-5",
+                                "custom-6"
+                              ],
+                              "type": "string"
+                            }
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "album": {
+                            "enum": [
+                              "grid",
+                              "filmstrip",
+                              "stack"
+                            ],
+                            "type": "string"
+                          },
+                          "template": {
+                            "enum": [
+                              "cinema",
+                              "radio",
+                              "lantern",
+                              "town",
+                              "darkroom",
+                              "rain",
+                              "puzzle",
+                              "exhibit",
+                              "garden",
+                              "night",
+                              "print",
+                              "letter",
+                              "weekend",
+                              "keepsake"
+                            ],
+                            "type": "string"
+                          },
+                          "schedule": {
+                            "type": "array",
+                            "maxItems": 8,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 40
+                                },
+                                "time": {
+                                  "type": "string",
+                                  "maxLength": 60
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                "detail": {
+                                  "type": "string",
+                                  "maxLength": 280
+                                },
+                                "date": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "startsAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "endsAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "venue": {
+                                  "type": "string",
+                                  "maxLength": 200
+                                },
+                                "maps": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 600,
+                                      "format": "uri"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "time",
+                                "title",
+                                "detail"
+                              ]
+                            }
+                          },
+                          "frame": {
+                            "enum": [
+                              "plain",
+                              "rounded",
+                              "double"
+                            ],
+                            "type": "string"
+                          },
+                          "divider": {
+                            "enum": [
+                              "plain",
+                              "line",
+                              "diamond"
+                            ],
+                            "type": "string"
+                          },
+                          "decoration": {
+                            "enum": [
+                              "plain",
+                              "petals",
+                              "stars"
+                            ],
+                            "type": "string"
+                          },
+                          "extras": {
+                            "type": "object",
+                            "properties": {
+                              "partners": {
+                                "type": "array",
+                                "maxItems": 2,
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string",
+                                      "maxLength": 100
+                                    },
+                                    "parents": {
+                                      "type": "string",
+                                      "maxLength": 180
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "parents"
+                                  ]
+                                }
+                              },
+                              "milestones": {
+                                "type": "array",
+                                "maxItems": 8,
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "date": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        {
+                                          "const": ""
+                                        }
+                                      ]
+                                    },
+                                    "title": {
+                                      "type": "string",
+                                      "maxLength": 120
+                                    },
+                                    "location": {
+                                      "type": "string",
+                                      "maxLength": 160
+                                    },
+                                    "story": {
+                                      "type": "string",
+                                      "maxLength": 500
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "date",
+                                    "title",
+                                    "location",
+                                    "story"
+                                  ]
+                                }
+                              },
+                              "quote": {
+                                "type": "string",
+                                "maxLength": 500
+                              },
+                              "livestream": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "maxLength": 600,
+                                    "format": "uri"
+                                  },
+                                  {
+                                    "const": ""
+                                  }
+                                ]
+                              },
+                              "gifts": {
+                                "type": "array",
+                                "maxItems": 5,
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "maxLength": 80
+                                    },
+                                    "account": {
+                                      "type": "string",
+                                      "maxLength": 120
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "label",
+                                    "account"
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "flow": {
+                            "enum": [
+                              "rooms",
+                              "chapters",
+                              "page"
+                            ],
+                            "type": "string"
+                          },
+                          "accent": {
+                            "enum": [
+                              "gold",
+                              "lavender",
+                              "fern"
+                            ],
+                            "type": "string"
+                          },
+                          "gardenMap": {
+                            "enum": [
+                              "twilight",
+                              "ponds",
+                              "orchard",
+                              "city",
+                              "shore"
+                            ],
+                            "type": "string"
+                          },
+                          "gardenCharacter": {
+                            "enum": [
+                              "lantern",
+                              "hare",
+                              "cat"
+                            ],
+                            "type": "string"
+                          },
+                          "sectionStyles": {
+                            "type": "object",
+                            "propertyNames": {
+                              "enum": [
+                                "cover",
+                                "story",
+                                "event",
+                                "album",
+                                "note",
+                                "rsvp",
+                                "custom-1",
+                                "custom-2",
+                                "custom-3",
+                                "custom-4",
+                                "custom-5",
+                                "custom-6"
+                              ],
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 120
+                                },
+                                "eyebrow": {
+                                  "type": "string",
+                                  "maxLength": 100
+                                },
+                                "lead": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "layout": {
+                                  "enum": [
+                                    "stack",
+                                    "editorial",
+                                    "framed"
+                                  ],
+                                  "type": "string"
+                                },
+                                "align": {
+                                  "enum": [
+                                    "left",
+                                    "center",
+                                    "right"
+                                  ],
+                                  "type": "string"
+                                },
+                                "mobileAlign": {
+                                  "enum": [
+                                    "left",
+                                    "center",
+                                    "right"
+                                  ],
+                                  "type": "string"
+                                },
+                                "font": {
+                                  "enum": [
+                                    "serif",
+                                    "sans",
+                                    "italic"
+                                  ],
+                                  "type": "string"
+                                },
+                                "surface": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9a-f]{6}$"
+                                },
+                                "ink": {
+                                  "type": "string",
+                                  "pattern": "^#[0-9a-f]{6}$"
+                                },
+                                "spacing": {
+                                  "type": "integer",
+                                  "minimum": 8,
+                                  "maximum": 88
+                                },
+                                "titleScale": {
+                                  "type": "integer",
+                                  "minimum": 65,
+                                  "maximum": 160
+                                }
+                              }
+                            }
+                          },
+                          "sectionAlign": {
+                            "type": "object",
+                            "propertyNames": {
+                              "enum": [
+                                "story",
+                                "event",
+                                "album",
+                                "note",
+                                "rsvp",
+                                "custom-1",
+                                "custom-2",
+                                "custom-3",
+                                "custom-4",
+                                "custom-5",
+                                "custom-6"
+                              ],
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "enum": [
+                                "left",
+                                "center"
+                              ],
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "x",
+                          "y",
+                          "type",
+                          "palette",
+                          "cover",
+                          "sections",
+                          "note"
+                        ]
+                      },
+                      "music": {
+                        "anyOf": [
+                          {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "original",
+                                      "beranda"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "apple"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "pattern": "^\\d{1,14}$"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "artist": {
+                                    "type": "string"
+                                  },
+                                  "albumId": {
+                                    "type": "string",
+                                    "pattern": "^\\d{1,14}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id",
+                                  "title",
+                                  "artist",
+                                  "albumId"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "recording"
+                                  },
+                                  "id": {
+                                    "enum": [
+                                      "gymnopedie",
+                                      "thinking-of-you",
+                                      "love-away"
+                                    ],
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "const": "openverse"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "title": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 180
+                                  },
+                                  "artist": {
+                                    "type": "string",
+                                    "maxLength": 140
+                                  },
+                                  "seconds": {
+                                    "type": "integer",
+                                    "minimum": -9007199254740991,
+                                    "maximum": 9007199254740991,
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "src": {
+                                    "type": "string",
+                                    "format": "uri"
+                                  },
+                                  "source": {
+                                    "type": "string",
+                                    "format": "uri"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id",
+                                  "title",
+                                  "artist",
+                                  "seconds",
+                                  "src",
+                                  "source"
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "guests": {
+                        "type": "string",
+                        "maxLength": 51000
+                      },
+                      "photos": {
+                        "type": "array",
+                        "maxItems": 10,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "jpeg": {
+                              "type": "string",
+                              "maxLength": 600000,
+                              "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                            },
+                            "caption": {
+                              "type": "string",
+                              "maxLength": 180
+                            },
+                            "cover": {
+                              "type": "boolean"
+                            },
+                            "background": {
+                              "type": "boolean"
+                            },
+                            "profileBackground": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "jpeg",
+                            "caption",
+                            "cover"
+                          ]
+                        }
+                      },
+                      "audio": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "start": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 3600
+                          },
+                          "end": {
+                            "type": "number",
+                            "maximum": 3600,
+                            "exclusiveMinimum": 0
+                          },
+                          "mp3": {
+                            "type": "string",
+                            "maxLength": 1850000,
+                            "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "start",
+                          "mp3"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "names",
+                      "date",
+                      "venue",
+                      "story",
+                      "theme",
+                      "guests",
+                      "photos"
+                    ]
+                  }
+                },
+                "required": [
+                  "data"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "weddings.draft",
+        "summary": "Read your invitation draft",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "names": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "date": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "venue": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "story": {
+                          "type": "string",
+                          "maxLength": 5000
+                        },
+                        "theme": {
+                          "enum": [
+                            "cinema",
+                            "radio",
+                            "lantern",
+                            "town",
+                            "darkroom",
+                            "rain",
+                            "puzzle",
+                            "exhibit",
+                            "garden",
+                            "night",
+                            "print",
+                            "letter",
+                            "weekend",
+                            "keepsake"
+                          ],
+                          "type": "string"
+                        },
+                        "design": {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            "y": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            "type": {
+                              "enum": [
+                                "serif",
+                                "sans",
+                                "italic"
+                              ],
+                              "type": "string"
+                            },
+                            "palette": {
+                              "enum": [
+                                "template",
+                                "cream",
+                                "ink",
+                                "rose"
+                              ],
+                              "type": "string"
+                            },
+                            "cover": {
+                              "enum": [
+                                "poster",
+                                "frame",
+                                "split"
+                              ],
+                              "type": "string"
+                            },
+                            "sections": {
+                              "type": "array",
+                              "maxItems": 11,
+                              "items": {
+                                "enum": [
+                                  "story",
+                                  "event",
+                                  "album",
+                                  "note",
+                                  "rsvp",
+                                  "custom-1",
+                                  "custom-2",
+                                  "custom-3",
+                                  "custom-4",
+                                  "custom-5",
+                                  "custom-6"
+                                ],
+                                "type": "string"
+                              }
+                            },
+                            "note": {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            "album": {
+                              "enum": [
+                                "grid",
+                                "filmstrip",
+                                "stack"
+                              ],
+                              "type": "string"
+                            },
+                            "template": {
+                              "enum": [
+                                "cinema",
+                                "radio",
+                                "lantern",
+                                "town",
+                                "darkroom",
+                                "rain",
+                                "puzzle",
+                                "exhibit",
+                                "garden",
+                                "night",
+                                "print",
+                                "letter",
+                                "weekend",
+                                "keepsake"
+                              ],
+                              "type": "string"
+                            },
+                            "schedule": {
+                              "type": "array",
+                              "maxItems": 8,
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 40
+                                  },
+                                  "time": {
+                                    "type": "string",
+                                    "maxLength": 60
+                                  },
+                                  "title": {
+                                    "type": "string",
+                                    "maxLength": 120
+                                  },
+                                  "detail": {
+                                    "type": "string",
+                                    "maxLength": 280
+                                  },
+                                  "date": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  },
+                                  "startsAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  },
+                                  "endsAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  },
+                                  "venue": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  },
+                                  "maps": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "maxLength": 600,
+                                        "format": "uri"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "time",
+                                  "title",
+                                  "detail"
+                                ]
+                              }
+                            },
+                            "frame": {
+                              "enum": [
+                                "plain",
+                                "rounded",
+                                "double"
+                              ],
+                              "type": "string"
+                            },
+                            "divider": {
+                              "enum": [
+                                "plain",
+                                "line",
+                                "diamond"
+                              ],
+                              "type": "string"
+                            },
+                            "decoration": {
+                              "enum": [
+                                "plain",
+                                "petals",
+                                "stars"
+                              ],
+                              "type": "string"
+                            },
+                            "extras": {
+                              "type": "object",
+                              "properties": {
+                                "partners": {
+                                  "type": "array",
+                                  "maxItems": 2,
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                      },
+                                      "parents": {
+                                        "type": "string",
+                                        "maxLength": 180
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "parents"
+                                    ]
+                                  }
+                                },
+                                "milestones": {
+                                  "type": "array",
+                                  "maxItems": 8,
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "date": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "format": "date"
+                                          },
+                                          {
+                                            "const": ""
+                                          }
+                                        ]
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                      },
+                                      "location": {
+                                        "type": "string",
+                                        "maxLength": 160
+                                      },
+                                      "story": {
+                                        "type": "string",
+                                        "maxLength": 500
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "date",
+                                      "title",
+                                      "location",
+                                      "story"
+                                    ]
+                                  }
+                                },
+                                "quote": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "livestream": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 600,
+                                      "format": "uri"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "gifts": {
+                                  "type": "array",
+                                  "maxItems": 5,
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "maxLength": 80
+                                      },
+                                      "account": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "label",
+                                      "account"
+                                    ]
+                                  }
+                                }
+                              }
+                            },
+                            "flow": {
+                              "enum": [
+                                "rooms",
+                                "chapters",
+                                "page"
+                              ],
+                              "type": "string"
+                            },
+                            "accent": {
+                              "enum": [
+                                "gold",
+                                "lavender",
+                                "fern"
+                              ],
+                              "type": "string"
+                            },
+                            "gardenMap": {
+                              "enum": [
+                                "twilight",
+                                "ponds",
+                                "orchard",
+                                "city",
+                                "shore"
+                              ],
+                              "type": "string"
+                            },
+                            "gardenCharacter": {
+                              "enum": [
+                                "lantern",
+                                "hare",
+                                "cat"
+                              ],
+                              "type": "string"
+                            },
+                            "sectionStyles": {
+                              "type": "object",
+                              "propertyNames": {
+                                "enum": [
+                                  "cover",
+                                  "story",
+                                  "event",
+                                  "album",
+                                  "note",
+                                  "rsvp",
+                                  "custom-1",
+                                  "custom-2",
+                                  "custom-3",
+                                  "custom-4",
+                                  "custom-5",
+                                  "custom-6"
+                                ],
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "title": {
+                                    "type": "string",
+                                    "maxLength": 120
+                                  },
+                                  "eyebrow": {
+                                    "type": "string",
+                                    "maxLength": 100
+                                  },
+                                  "lead": {
+                                    "type": "string",
+                                    "maxLength": 500
+                                  },
+                                  "layout": {
+                                    "enum": [
+                                      "stack",
+                                      "editorial",
+                                      "framed"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "align": {
+                                    "enum": [
+                                      "left",
+                                      "center",
+                                      "right"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "mobileAlign": {
+                                    "enum": [
+                                      "left",
+                                      "center",
+                                      "right"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "font": {
+                                    "enum": [
+                                      "serif",
+                                      "sans",
+                                      "italic"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "surface": {
+                                    "type": "string",
+                                    "pattern": "^#[0-9a-f]{6}$"
+                                  },
+                                  "ink": {
+                                    "type": "string",
+                                    "pattern": "^#[0-9a-f]{6}$"
+                                  },
+                                  "spacing": {
+                                    "type": "integer",
+                                    "minimum": 8,
+                                    "maximum": 88
+                                  },
+                                  "titleScale": {
+                                    "type": "integer",
+                                    "minimum": 65,
+                                    "maximum": 160
+                                  }
+                                }
+                              }
+                            },
+                            "sectionAlign": {
+                              "type": "object",
+                              "propertyNames": {
+                                "enum": [
+                                  "story",
+                                  "event",
+                                  "album",
+                                  "note",
+                                  "rsvp",
+                                  "custom-1",
+                                  "custom-2",
+                                  "custom-3",
+                                  "custom-4",
+                                  "custom-5",
+                                  "custom-6"
+                                ],
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "enum": [
+                                  "left",
+                                  "center"
+                                ],
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "x",
+                            "y",
+                            "type",
+                            "palette",
+                            "cover",
+                            "sections",
+                            "note"
+                          ]
+                        },
+                        "music": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "enum": [
+                                        "original",
+                                        "beranda"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "const": "apple"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "pattern": "^\\d{1,14}$"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "artist": {
+                                      "type": "string"
+                                    },
+                                    "albumId": {
+                                      "type": "string",
+                                      "pattern": "^\\d{1,14}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "id",
+                                    "title",
+                                    "artist",
+                                    "albumId"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "const": "recording"
+                                    },
+                                    "id": {
+                                      "enum": [
+                                        "gymnopedie",
+                                        "thinking-of-you",
+                                        "love-away"
+                                      ],
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "id"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "const": "openverse"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "title": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 180
+                                    },
+                                    "artist": {
+                                      "type": "string",
+                                      "maxLength": 140
+                                    },
+                                    "seconds": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991,
+                                      "exclusiveMinimum": 0
+                                    },
+                                    "src": {
+                                      "type": "string",
+                                      "format": "uri"
+                                    },
+                                    "source": {
+                                      "type": "string",
+                                      "format": "uri"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "id",
+                                    "title",
+                                    "artist",
+                                    "seconds",
+                                    "src",
+                                    "source"
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "guests": {
+                          "type": "string",
+                          "maxLength": 51000
+                        },
+                        "photos": {
+                          "type": "array",
+                          "maxItems": 10,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "jpeg": {
+                                "type": "string",
+                                "maxLength": 600000,
+                                "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                              },
+                              "caption": {
+                                "type": "string",
+                                "maxLength": 180
+                              },
+                              "cover": {
+                                "type": "boolean"
+                              },
+                              "background": {
+                                "type": "boolean"
+                              },
+                              "profileBackground": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "jpeg",
+                              "caption",
+                              "cover"
+                            ]
+                          }
+                        },
+                        "audio": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "start": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 3600
+                            },
+                            "end": {
+                              "type": "number",
+                              "maximum": 3600,
+                              "exclusiveMinimum": 0
+                            },
+                            "mp3": {
+                              "type": "string",
+                              "maxLength": 1850000,
+                              "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "start",
+                            "mp3"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "names",
+                        "date",
+                        "venue",
+                        "story",
+                        "theme",
+                        "guests",
+                        "photos"
+                      ]
+                    },
+                    "weddingId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "weddingId"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings/{id}/guests": {
+      "get": {
+        "operationId": "weddings.guests",
+        "summary": "List guests for your invitation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "guests": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "phone": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "attending": {
+                            "anyOf": [
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "ceremony": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "reception": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "phone",
+                          "email",
+                          "attending",
+                          "ceremony",
+                          "reception"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "guests"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "weddings.addGuests",
+        "summary": "Add guests to your invitation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "guests": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "phone": {
+                          "type": "string",
+                          "maxLength": 40,
+                          "default": ""
+                        },
+                        "email": {
+                          "type": "string",
+                          "maxLength": 180,
+                          "default": ""
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "guests"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "added": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "added"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings/{weddingId}/guests/{guestId}/check-in": {
+      "post": {
+        "operationId": "weddings.checkIn",
+        "summary": "Check in a guest",
+        "parameters": [
+          {
+            "name": "weddingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "guestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "enum": [
+                      "ceremony",
+                      "reception"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "session"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "checkedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "checkedAt"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/weddings/reports": {
+      "post": {
+        "operationId": "weddings.report",
+        "summary": "Report an issue in the wedding studio",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 220
+                  },
+                  "message": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "page",
+                  "message"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/weddings": {
       "post": {
         "operationId": "weddings.publish",
@@ -463,6 +2297,55 @@
                                 "detail": {
                                   "type": "string",
                                   "maxLength": 280
+                                },
+                                "date": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "startsAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "endsAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "venue": {
+                                  "type": "string",
+                                  "maxLength": 200
+                                },
+                                "maps": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 600,
+                                      "format": "uri"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
@@ -471,6 +2354,141 @@
                                 "title",
                                 "detail"
                               ]
+                            }
+                          },
+                          "frame": {
+                            "enum": [
+                              "plain",
+                              "rounded",
+                              "double"
+                            ],
+                            "type": "string"
+                          },
+                          "divider": {
+                            "enum": [
+                              "plain",
+                              "line",
+                              "diamond"
+                            ],
+                            "type": "string"
+                          },
+                          "decoration": {
+                            "enum": [
+                              "plain",
+                              "petals",
+                              "stars"
+                            ],
+                            "type": "string"
+                          },
+                          "extras": {
+                            "type": "object",
+                            "properties": {
+                              "partners": {
+                                "type": "array",
+                                "maxItems": 2,
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string",
+                                      "maxLength": 100
+                                    },
+                                    "parents": {
+                                      "type": "string",
+                                      "maxLength": 180
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "parents"
+                                  ]
+                                }
+                              },
+                              "milestones": {
+                                "type": "array",
+                                "maxItems": 8,
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "date": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        {
+                                          "const": ""
+                                        }
+                                      ]
+                                    },
+                                    "title": {
+                                      "type": "string",
+                                      "maxLength": 120
+                                    },
+                                    "location": {
+                                      "type": "string",
+                                      "maxLength": 160
+                                    },
+                                    "story": {
+                                      "type": "string",
+                                      "maxLength": 500
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "date",
+                                    "title",
+                                    "location",
+                                    "story"
+                                  ]
+                                }
+                              },
+                              "quote": {
+                                "type": "string",
+                                "maxLength": 500
+                              },
+                              "livestream": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "maxLength": 600,
+                                    "format": "uri"
+                                  },
+                                  {
+                                    "const": ""
+                                  }
+                                ]
+                              },
+                              "gifts": {
+                                "type": "array",
+                                "maxItems": 5,
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "maxLength": 80
+                                    },
+                                    "account": {
+                                      "type": "string",
+                                      "maxLength": 120
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "label",
+                                    "account"
+                                  ]
+                                }
+                              }
                             }
                           },
                           "flow": {
@@ -720,7 +2738,6 @@
                   },
                   "guests": {
                     "type": "array",
-                    "minItems": 1,
                     "maxItems": 500,
                     "items": {
                       "type": "string",
@@ -728,9 +2745,13 @@
                       "maxLength": 100
                     }
                   },
+                  "draftId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
                   "photos": {
                     "type": "array",
-                    "maxItems": 9,
+                    "maxItems": 10,
                     "items": {
                       "type": "object",
                       "properties": {
@@ -748,6 +2769,9 @@
                         },
                         "background": {
                           "type": "boolean"
+                        },
+                        "profileBackground": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -756,6 +2780,35 @@
                         "cover"
                       ]
                     }
+                  },
+                  "audio": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "start": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 3600
+                      },
+                      "end": {
+                        "type": "number",
+                        "maximum": 3600,
+                        "exclusiveMinimum": 0
+                      },
+                      "mp3": {
+                        "type": "string",
+                        "maxLength": 1850000,
+                        "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "start",
+                      "mp3"
+                    ]
                   }
                 },
                 "required": [
@@ -993,6 +3046,55 @@
                                   "detail": {
                                     "type": "string",
                                     "maxLength": 280
+                                  },
+                                  "date": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  },
+                                  "startsAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  },
+                                  "endsAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
+                                  },
+                                  "venue": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  },
+                                  "maps": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "maxLength": 600,
+                                        "format": "uri"
+                                      },
+                                      {
+                                        "const": ""
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -1001,6 +3103,141 @@
                                   "title",
                                   "detail"
                                 ]
+                              }
+                            },
+                            "frame": {
+                              "enum": [
+                                "plain",
+                                "rounded",
+                                "double"
+                              ],
+                              "type": "string"
+                            },
+                            "divider": {
+                              "enum": [
+                                "plain",
+                                "line",
+                                "diamond"
+                              ],
+                              "type": "string"
+                            },
+                            "decoration": {
+                              "enum": [
+                                "plain",
+                                "petals",
+                                "stars"
+                              ],
+                              "type": "string"
+                            },
+                            "extras": {
+                              "type": "object",
+                              "properties": {
+                                "partners": {
+                                  "type": "array",
+                                  "maxItems": 2,
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                      },
+                                      "parents": {
+                                        "type": "string",
+                                        "maxLength": 180
+                                      }
+                                    },
+                                    "required": [
+                                      "name",
+                                      "parents"
+                                    ]
+                                  }
+                                },
+                                "milestones": {
+                                  "type": "array",
+                                  "maxItems": 8,
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "date": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "format": "date"
+                                          },
+                                          {
+                                            "const": ""
+                                          }
+                                        ]
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                      },
+                                      "location": {
+                                        "type": "string",
+                                        "maxLength": 160
+                                      },
+                                      "story": {
+                                        "type": "string",
+                                        "maxLength": 500
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "date",
+                                      "title",
+                                      "location",
+                                      "story"
+                                    ]
+                                  }
+                                },
+                                "quote": {
+                                  "type": "string",
+                                  "maxLength": 500
+                                },
+                                "livestream": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "maxLength": 600,
+                                      "format": "uri"
+                                    },
+                                    {
+                                      "const": ""
+                                    }
+                                  ]
+                                },
+                                "gifts": {
+                                  "type": "array",
+                                  "maxItems": 5,
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "maxLength": 80
+                                      },
+                                      "account": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "label",
+                                      "account"
+                                    ]
+                                  }
+                                }
                               }
                             },
                             "flow": {
@@ -1282,7 +3519,7 @@
                         },
                         "photos": {
                           "type": "array",
-                          "maxItems": 9,
+                          "maxItems": 10,
                           "items": {
                             "type": "object",
                             "properties": {
@@ -1298,6 +3535,9 @@
                               },
                               "background": {
                                 "type": "boolean"
+                              },
+                              "profileBackground": {
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -1306,6 +3546,34 @@
                               "cover"
                             ]
                           }
+                        },
+                        "audio": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "start": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 3600
+                            },
+                            "end": {
+                              "type": "number",
+                              "maximum": 3600,
+                              "exclusiveMinimum": 0
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "start",
+                            "id"
+                          ]
                         }
                       },
                       "required": [

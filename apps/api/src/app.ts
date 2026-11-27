@@ -4,7 +4,7 @@ import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins'
 import { ORPCError, onError } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
-import { Hono } from 'hono'
+import { Hono, type MiddlewareHandler } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { csrf } from 'hono/csrf'
 import { logger } from 'hono/logger'
@@ -16,7 +16,7 @@ export type Deps = Omit<Context, 'headers'> & {
   reportError?: (error: unknown) => void
 }
 
-export const openapiInfo = { title: 'App API', version: '0.1.0' }
+export const openapiInfo = { title: 'Hari Bersama API', version: '0.2.0' }
 
 // The web app and the API are always served from the same origin
 // (Vite proxy in dev, nginx in Docker, Workers routes in production), so no CORS.
@@ -42,58 +42,51 @@ export function createApp(deps: Deps) {
   app.use(secureHeaders(), csrf({ origin }))
 
   const mediaId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-  app.get('/api/wedding-media/:weddingId/:photoId', async (c) => {
-    const { weddingId, photoId } = c.req.param()
-    if (!context.media || !mediaId.test(weddingId) || !mediaId.test(photoId)) return c.notFound()
-    const [published] = await context.sql`
-      select 1 from weddings where id = ${weddingId} and content->'photos' @> ${context.sql.json([{ id: photoId }])}
+  // Media ids are random UUIDs that only the invitation and its albums reveal, so a link works like a key.
+  app.get('/api/m/:id', async (c) => {
+    const { id } = c.req.param()
+    if (!context.media || !mediaId.test(id)) return c.notFound()
+    const [row] = await context.sql<{ contentType: string }[]>`
+      select content_type as "contentType" from invitation_media where id = ${id}
     `
-    if (!published) return c.notFound()
-    const image = (await context.media.get(`assets/${photoId}`)) ?? (await context.media.get(`${weddingId}/${photoId}`))
-    if (!image) return c.notFound()
-    return new Response(image, {
-      headers: {
-        'Content-Type': 'image/jpeg',
-        'Cache-Control': 'private, max-age=3600',
-        'X-Content-Type-Options': 'nosniff',
-      },
-    })
-  })
-  app.get('/api/wedding-audio/:weddingId/:audioId', async (c) => {
-    const { weddingId, audioId } = c.req.param()
-    if (!context.media || !mediaId.test(weddingId) || !mediaId.test(audioId)) return c.notFound()
-    const [published] = await context.sql`select 1 from weddings
-      where id = ${weddingId} and content->'audio'->>'id' = ${audioId}`
-    if (!published) return c.notFound()
-    const audio = await context.media.get(`audio/${audioId}`)
-    if (!audio) return c.notFound()
+    if (!row) return c.notFound()
+    const bytes = await context.media.get(`m/${id}`)
+    if (!bytes) return c.notFound()
     const headers = new Headers({
-      'Content-Type': 'audio/mpeg',
+      'Content-Type': row.contentType,
       'Accept-Ranges': 'bytes',
-      'Cache-Control': 'private, max-age=3600',
+      'Cache-Control': 'public, max-age=31536000, immutable',
       'X-Content-Type-Options': 'nosniff',
     })
     const range = c.req.header('range')
     if (range) {
       const match = /^bytes=(\d*)-(\d*)$/.exec(range)
-      const start = match?.[1] ? Number(match[1]) : Math.max(0, audio.length - Number(match?.[2]))
-      const end = match?.[1] && match[2] ? Math.min(Number(match[2]), audio.length - 1) : audio.length - 1
+      const start = match?.[1] ? Number(match[1]) : Math.max(0, bytes.length - Number(match?.[2]))
+      const end = match?.[1] && match[2] ? Math.min(Number(match[2]), bytes.length - 1) : bytes.length - 1
       if (!match || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end) {
-        headers.set('Content-Range', `bytes */${audio.length}`)
+        headers.set('Content-Range', `bytes */${bytes.length}`)
         return new Response(null, { status: 416, headers })
       }
-      headers.set('Content-Range', `bytes ${start}-${end}/${audio.length}`)
+      headers.set('Content-Range', `bytes ${start}-${end}/${bytes.length}`)
       headers.set('Content-Length', String(end - start + 1))
-      return new Response(audio.subarray(start, end + 1), { status: 206, headers })
+      return new Response(bytes.subarray(start, end + 1), { status: 206, headers })
     }
-    headers.set('Content-Length', String(audio.length))
-    return new Response(audio, { headers })
+    headers.set('Content-Length', String(bytes.length))
+    return new Response(bytes, { headers })
   })
-  const studioBodyLimit = bodyLimit({ maxSize: 8_000_000 })
-  app.use('/rpc/weddings/publish', studioBodyLimit)
-  app.use('/rpc/weddings/saveDraft', studioBodyLimit)
-  app.use('/api/weddings', studioBodyLimit)
-  app.use('/api/weddings/drafts/:id', studioBodyLimit)
+  // Uploads carry base64 photos and songs. Everything else stays small.
+  const uploadLimit = bodyLimit({ maxSize: 2_600_000 })
+  const smallLimit = bodyLimit({ maxSize: 400_000 })
+  const uploads = [
+    /^\/rpc\/invitations\/(upload|boothUpload|cameraShot)$/,
+    /^\/api\/invitations\/[^/]+\/media$/,
+    /^\/api\/u\/[^/]+\/(booth|camera\/[^/]+)$/,
+  ]
+  const limit: MiddlewareHandler = (c, next) =>
+    (uploads.some((pattern) => pattern.test(c.req.path)) ? uploadLimit : smallLimit)(c, next)
+  app.use('/rpc/*', limit)
+  app.use('/api/invitations/*', limit)
+  app.use('/api/u/*', limit)
 
   app.on(['GET', 'POST'], '/api/auth/*', (c) => context.auth.handler(c.req.raw))
 

@@ -1,22 +1,20 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { createRoute, redirect } from '@tanstack/react-router'
+import { createRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { z } from 'zod'
 import { authClient } from '@/lib/auth'
 import { orpc } from '@/lib/orpc'
 import { rootRoute } from './root'
-import { templateSearch } from './wedding-gallery'
+
+const safeNext = (value: string | undefined) => (value?.startsWith('/') && !value.startsWith('//') ? value : '/studio')
 
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  validateSearch: templateSearch,
+  validateSearch: z.object({ next: z.string().max(200).optional(), alasan: z.string().max(120).optional() }),
   beforeLoad: async ({ search }) => {
     const { data } = await authClient.getSession()
-    if (data) throw redirect({ to: '/studio', search })
+    if (data) throw redirect({ href: safeNext(search.next) })
   },
   component: LoginPage,
 })
@@ -25,9 +23,8 @@ const socialProviders = ['google', 'github'] as const
 const providerLabels = { google: 'Google', github: 'GitHub' } as const
 
 function LoginPage() {
-  const { template } = loginRoute.useSearch()
-  const search = template ? `?template=${template}` : ''
-  const studioUrl = `/studio${search}`
+  const { next, alasan } = loginRoute.useSearch()
+  const target = safeNext(next)
   const [email, setEmail] = useState('')
   const providers = useQuery(orpc.authProviders.queryOptions())
   const useHub = providers.data?.includes('altivola') ?? false
@@ -36,8 +33,8 @@ function LoginPage() {
 
   const magicLink = useMutation({
     mutationFn: async () => {
-      const { error } = await authClient.signIn.magicLink({ email, callbackURL: studioUrl })
-      if (error) throw new Error(error.message ?? 'Could not send the link')
+      const { error } = await authClient.signIn.magicLink({ email, callbackURL: target })
+      if (error) throw new Error(error.message ?? 'Link masuk gagal dikirim')
     },
   })
 
@@ -45,13 +42,13 @@ function LoginPage() {
     mutationFn: async (provider: keyof typeof providerLabels) => {
       const { data, error } = await authClient.signIn.social({
         provider: useHub ? 'altivola' : provider,
-        callbackURL: studioUrl,
-        errorCallbackURL: `/login${search}`,
+        callbackURL: target,
+        errorCallbackURL: `/login?next=${encodeURIComponent(target)}`,
         disableRedirect: useHub,
       })
-      if (error) throw new Error(error.message ?? 'Could not start sign in')
+      if (error) throw new Error(error.message ?? 'Tidak bisa mulai masuk')
       if (useHub) {
-        if (!data?.url) throw new Error('Could not start sign in')
+        if (!data?.url) throw new Error('Tidak bisa mulai masuk')
         const authorize = new URL(data.url)
         authorize.searchParams.set('altivola_provider', provider)
         window.location.assign(authorize)
@@ -61,73 +58,86 @@ function LoginPage() {
   const callbackFailed = new URLSearchParams(window.location.search).has('error')
 
   return (
-    <Card className="mx-auto mt-12 max-w-sm">
-      <CardHeader>
-        <CardTitle>Masuk ke Hari Bersama</CardTitle>
-        <CardDescription>
-          {emailEnabled
-            ? 'Kami akan kirim tautan masuk ke email kamu.'
-            : 'Masuk untuk membuat dan menerbitkan undangan.'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!emailEnabled ? null : magicLink.isSuccess ? (
-          <p className="text-sm">
-            Check <strong>{email}</strong> for your sign in link.
-            {import.meta.env.DEV && (
-              <>
-                {' '}
-                Locally, open{' '}
-                <a className="underline" href="http://localhost:8025" target="_blank" rel="noreferrer">
-                  Mailpit
-                </a>
-                .
-              </>
+    <div className="flex min-h-dvh flex-col bg-paper px-4">
+      <header className="mx-auto flex w-full max-w-5xl items-center py-5">
+        <Link to="/" className="font-serif text-2xl font-semibold tracking-tight text-ink">
+          hari bersama<span className="text-terra">.</span>
+        </Link>
+      </header>
+      <main className="mx-auto mt-10 w-full max-w-sm flex-1">
+        <div className="rounded-[28px] border border-border bg-white p-7 shadow-[0_20px_50px_rgb(28_26_22/0.08)]">
+          <h1 className="font-display text-3xl font-bold">Masuk dulu, yuk</h1>
+          <p className="mt-2 text-sm text-soft">
+            {alasan ?? 'Simpan undanganmu, kirim ke tamu, dan pantau balasan mereka dari mana saja.'}
+          </p>
+          <div className="mt-6 space-y-3">
+            {emailEnabled &&
+              (magicLink.isSuccess ? (
+                <p className="rounded-2xl bg-sand p-4 text-sm">
+                  Cek email <strong>{email}</strong> untuk link masuk.
+                  {import.meta.env.DEV && (
+                    <>
+                      {' '}
+                      Di lokal, buka{' '}
+                      <a className="underline" href="http://localhost:8026" target="_blank" rel="noreferrer">
+                        Mailpit
+                      </a>
+                      .
+                    </>
+                  )}
+                </p>
+              ) : (
+                <form
+                  className="space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    magicLink.mutate()
+                  }}
+                >
+                  <label className="block text-sm font-semibold" htmlFor="email">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-input bg-paper px-4 outline-none focus:border-ink"
+                  />
+                  {magicLink.error && <p className="text-sm text-terra">{magicLink.error.message}</p>}
+                  <button
+                    type="submit"
+                    disabled={magicLink.isPending}
+                    className="h-12 w-full rounded-full bg-ink font-semibold text-white disabled:opacity-60"
+                  >
+                    {magicLink.isPending ? 'Mengirim...' : 'Kirim link masuk'}
+                  </button>
+                </form>
+              ))}
+            {(oauth.error || callbackFailed) && (
+              <p role="alert" className="text-sm text-terra">
+                {oauth.error?.message ?? 'Gagal masuk. Coba lagi.'}
+              </p>
             )}
-          </p>
-        ) : (
-          <form
-            className="space-y-3"
-            onSubmit={(event) => {
-              event.preventDefault()
-              magicLink.mutate()
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </div>
-            {magicLink.error && <p className="text-sm text-destructive">{magicLink.error.message}</p>}
-            <Button type="submit" className="w-full" disabled={magicLink.isPending}>
-              {magicLink.isPending ? 'Sending...' : 'Email me a link'}
-            </Button>
-          </form>
-        )}
-
-        {(oauth.error || callbackFailed) && (
-          <p role="alert" className="text-sm text-destructive">
-            {oauth.error?.message ?? 'Sign in could not be completed. Please try again.'}
-          </p>
-        )}
-        {oauthProviders.map((provider) => (
-          <Button
-            key={provider}
-            variant="outline"
-            className="w-full"
-            disabled={oauth.isPending}
-            onClick={() => oauth.mutate(provider)}
-          >
-            Lanjut dengan {providerLabels[provider]}
-          </Button>
-        ))}
-      </CardContent>
-    </Card>
+            {oauthProviders.map((provider) => (
+              <button
+                key={provider}
+                type="button"
+                disabled={oauth.isPending}
+                onClick={() => oauth.mutate(provider)}
+                className="h-12 w-full rounded-full border border-input bg-white font-semibold hover:bg-sand disabled:opacity-60"
+              >
+                Lanjut dengan {providerLabels[provider]}
+              </button>
+            ))}
+            {providers.isSuccess && !emailEnabled && oauthProviders.length === 0 && (
+              <p className="text-sm text-soft">Belum ada cara masuk yang aktif di server ini.</p>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
   )
 }

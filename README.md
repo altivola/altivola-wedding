@@ -1,6 +1,14 @@
-# Altivola Wedding
+# Hari Bersama (altivola-wedding)
 
-Browse wedding invitation examples without signing in. In the Studio, save and reopen drafts, customize an invitation, and publish a separate link for each guest. The guest list supports RSVP filters, CSV import and export, WhatsApp sharing, and QR or manual check-in for the ceremony and reception.
+Hari Bersama is a wedding invitation builder. Anyone can pick a theme and build an invitation without an account. An account is needed to keep the draft longer than 3 days and to publish it.
+
+- **Builder:** 17 sections (cover, opening, couple, story, little things, events, countdown, gallery, RSVP and wishes, dress code, gift, film, live stream, photobooth, camera, notes, thank you). Each field can be hidden. Sections can be turned off and dragged into a new order. A live phone and desktop preview shows the theme's samples until the couple fills in their own details.
+- **Themes:** six themes with their own envelope, illustrations, photo frames and photobooth frame: Kawung Senja, Sawah Pagi, Kartu Pos, Pasar Malam, Untai Melati, Kertas Warna. The opening scenes use painted WebP artwork in `apps/web/public/wedding/themes/`. The envelopes, ornaments and fallback scenery are SVGs in `apps/web/src/invite/themes/`.
+- **Guests:** personal links with the guest's name on the cover, up to three events with a per guest choice of which events they see, CSV import and export, WhatsApp messages from a template, and share links for group chats.
+- **Replies:** RSVP with party size, a check-in QR for guests who say yes, and wishes that the couple can hide.
+- **Check-in:** QR scanning in the browser, name search, walk-ins, and a queue that keeps scans while the venue has no signal.
+- **Photobooth:** guests pick a layout and a theme frame, take three shots on their own phone, and add the strip to a shared album.
+- **Disposable camera:** each guest gets a roll of 24 shots with no preview. Five film looks. The couple decides when the album opens.
 
 ## What's inside
 
@@ -33,10 +41,7 @@ If port 5432 is already taken, set `DB_PORT` in `.env` and use the same port in 
 
 ## Invitation music
 
-Select **Musik** in the Studio to preview recordings or search the CC0 recordings
-from Freesound via Openverse. Guests listen directly in the invitation without
-a music service account. You can also upload an MP3 up to 1.3 MB and choose the
-part that loops.
+Each theme has a default song. The Studio also offers the other recordings, an MP3 upload of up to 1.4 MB with a loop start and end, or no music. Guests start the music by opening the envelope and can pause it.
 
 - _Gymnopédie No. 1_ by Erik Satie, [recording by Teknopazzo](https://commons.wikimedia.org/wiki/File:Gymnopedie_No._1..ogg), CC0.
 - _Can't Take Our Love Away_ by [Josh Woodward](https://freemusicarchive.org/music/Josh_Woodward/Crawford_Street/JoshWoodward-CrawfordStreet-03-CantTakeOurLoveAway/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
@@ -44,30 +49,13 @@ part that loops.
 
 ## Studio sign-in
 
-To enable Studio sign-in, register the Wedding callback with Altivola
-Auth and set the three `ALTIVOLA_AUTH_*` variables in the API environment. For
-the configured production origin, the callback is
-`https://wedding.altivola.workers.dev/api/auth/callback/altivola`.
+Drafts started without an account get an edit token that stays in the browser (`localStorage`, key `hb-drafts`) and is sent as the `x-draft-token` header. Unclaimed drafts are removed 3 days after they are created, together with their media. After sign-in, the Studio claims the draft for the account.
 
-Creators sign in before they can enter the Studio or publish an invitation.
-The login screen offers Google and GitHub through Altivola Auth. The homepage,
-examples, guest invitations, and RSVP links are public.
-
-The Studio has fourteen invitation designs. These include a walkable 3D garden,
-an illustrated town, a tunable radio, a photo darkroom, a rain-covered window,
-a matching game, a scroll journey, an exhibition map, and a rainy cinema.
-The cinema uses live WebGL lighting and ripples with a CSS fallback. Its lobby
-poster and auditorium screen show the couple's actual invitation content. Guests
-can change the reel and ring the usher's bell to open RSVP.
-Creators can reorder sections, change their styles, and add titled text sections.
-The Studio also supports separate cover and profile backgrounds, frames,
-decorations, couple profiles, a relationship timeline, and Maps and Calendar
-links for each event in the rundown.
-In the 3D garden, guests can turn movement effects on independently from the soundtrack.
+To enable sign-in, register the callback with Altivola Auth and set the three `ALTIVOLA_AUTH_*` variables in the API environment. For the configured production origin, the callback is `https://wedding.altivola.workers.dev/api/auth/callback/altivola`. Locally, the email magic link goes to Mailpit.
 
 ## Deployment status
 
-The Worker config requires a project-specific Hyperdrive ID, queue, runtime secrets, and a D1 database bound as `WEDDING_MEDIA`. D1 stores published JPEG and MP3 uploads. Postgres stores drafts, published content, guest lists, RSVPs, and accounts. The Node API stores published media in `.wedding-media` by default. Set `WEDDING_MEDIA_DIR` to a persistent directory when running the Node API outside local development.
+The Worker config requires a project-specific Hyperdrive ID, queue, runtime secrets, and a D1 database bound as `WEDDING_MEDIA`. D1 stores every upload (photos, songs, photobooth strips and camera shots) under `m/<media id>`, served at `/api/m/<media id>`. Postgres stores invitations, guests, wishes, albums, and accounts. The Node API stores published media in `.wedding-media` by default. Set `WEDDING_MEDIA_DIR` to a persistent directory when running the Node API outside local development.
 
 Apply the photo schema with `pnpm exec wrangler d1 migrations apply
 altivola-wedding-media --remote` from `apps/api` before deploying. Use `--local`

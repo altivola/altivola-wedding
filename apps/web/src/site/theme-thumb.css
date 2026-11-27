@@ -1,0 +1,222 @@
+.thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 220px;
+  overflow: hidden;
+  background-color: var(--t-paper);
+  background-image: var(--t-pattern);
+}
+.thumb-pasar-malam {
+  background-color: #0f1231;
+}
+.mini-phone {
+  position: relative;
+  flex: none;
+  width: 30%;
+  aspect-ratio: 9 / 19;
+  margin: 0 -2%;
+  padding: 3px;
+  border-radius: 16px;
+  background: #1c1a16;
+  box-shadow: 0 14px 28px rgb(0 0 0 / 0.25);
+}
+.mini-phone::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  z-index: 2;
+  width: 26%;
+  height: 4px;
+  border-radius: 4px;
+  background: #1c1a16;
+  transform: translateX(-50%);
+}
+.mini-phone.is-left {
+  transform: rotate(-7deg) translateY(8px) scale(0.9);
+}
+.mini-phone.is-center {
+  z-index: 1;
+  width: 33%;
+}
+.mini-phone.is-right {
+  transform: rotate(7deg) translateY(8px) scale(0.9);
+}
+.mini-screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 13px;
+  background-color: var(--t-paper);
+  background-image: var(--t-pattern);
+  color: var(--t-ink);
+}
+.thumb-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5%;
+  height: 100%;
+  padding: 10% 6%;
+  text-align: center;
+}
+.thumb-cover.is-dark {
+  background: var(--t-deep);
+  color: var(--t-on-deep);
+}
+.thumb-cover .env {
+  width: 100%;
+  height: auto;
+}
+.thumb-kicker {
+  font: 700 6px / 1.2 var(--hb-body);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.thumb-kicker.is-accent {
+  color: var(--t-accent);
+  opacity: 1;
+}
+.thumb-names {
+  font-family: var(--t-display);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.thumb-names.is-big {
+  font-size: 15px;
+}
+.thumb-kawung .thumb-names,
+.thumb-melati .thumb-names {
+  font-style: italic;
+}
+.thumb-pill {
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: var(--t-accent);
+  color: #fff;
+  font: 700 5px / 1.2 var(--hb-body);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.thumb-hero {
+  position: relative;
+  height: 100%;
+}
+.thumb-hero .hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.thumb-hero-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 18%;
+  text-align: center;
+}
+.thumb-kawung .thumb-hero:has(.theme-painting[data-ready]) {
+  --t-accent: #e5bb73;
+  color: #fff1dc;
+}
+.thumb-sawah .thumb-hero-text {
+  justify-content: flex-start;
+  padding-top: 26%;
+}
+.thumb-kertas .thumb-hero-text {
+  inset: 30% 12%;
+  padding: 0;
+  border: 1.5px solid var(--t-ink);
+  border-radius: 10px;
+  background: #fff;
+}
+.thumb-kartu-pos .thumb-hero-text {
+  padding-right: 20%;
+  transform: rotate(-3deg);
+}
+.thumb-kartu-pos .thumb-names {
+  font-family: var(--t-script);
+  color: var(--t-accent);
+}
+.thumb-pasar-malam .thumb-hero-text {
+  padding-bottom: 50%;
+  color: #fff4dc;
+}
+.thumb-amp {
+  font-family: var(--t-script);
+  font-size: 10px;
+  color: var(--t-accent);
+}
+.thumb-date {
+  margin-top: 3px;
+  font: 600 6px / 1.2 var(--hb-body);
+}
+.thumb-panel-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 22% 8% 0;
+}
+.thumb-panel-page .ornament {
+  width: 70%;
+}
+.thumb-title {
+  font-family: var(--t-display);
+  font-size: 13px;
+  font-weight: 600;
+}
+.thumb-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 9% 6%;
+  background: var(--t-surface);
+}
+.thumb-panel.panel-gilded {
+  border: 0.5px solid var(--t-accent);
+}
+.thumb-panel.panel-paper,
+.thumb-panel.panel-leaf {
+  border: 0.5px solid var(--t-line);
+  border-radius: 10px;
+}
+.thumb-panel.panel-postcard {
+  border-top: 3px solid var(--t-accent);
+}
+.thumb-panel.panel-ticket {
+  border-radius: 6px;
+  border: 0.5px dashed var(--t-line);
+}
+.thumb-panel.panel-block {
+  border: 1.2px solid var(--t-ink);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 2px 2px 0 var(--t-accent);
+}
+.thumb-event {
+  font-family: var(--t-display);
+  font-size: 8px;
+  font-weight: 600;
+}
+.thumb-small {
+  font: 5px / 1.2 var(--hb-body);
+  opacity: 0.7;
+}
+.thumb-kawung .thumb-hero-text,
+.thumb-melati .thumb-hero-text {
+  justify-content: center;
+  padding: 26% 0 0;
+}

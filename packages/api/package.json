@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./wedding-design": "./src/wedding-design.ts",
+    "./invitation-model": "./src/invitation-model.ts",
     "./music": "./src/music.ts"
   },
   "scripts": {

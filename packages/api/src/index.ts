@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { pub } from './context.ts'
+import { invitations } from './invitations.ts'
 import { music } from './music.ts'
 import { notes } from './notes.ts'
-import { weddings } from './weddings.ts'
 
 export const router = {
   health: pub
@@ -18,7 +18,7 @@ export const router = {
     .handler(({ context }) => context.authProviders),
   notes,
   music,
-  weddings,
+  invitations,
 }
 
 export type Router = typeof router

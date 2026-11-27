@@ -1,11 +1,56 @@
 @import "tailwindcss";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/figtree";
+@import "@fontsource-variable/shantell-sans";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/fraunces/wght-italic.css";
+@import "@fontsource-variable/cormorant";
+@import "@fontsource-variable/cormorant/wght-italic.css";
+@import "@fontsource-variable/dancing-script";
+@import "@fontsource-variable/playpen-sans";
+@import "@fontsource-variable/caveat";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
 @import "@app/ui/tokens.css";
 
 @custom-variant dark (&:is(.dark *));
 
+/* Hari Bersama brand. The site is warm paper with ink, a terracotta dot and bright blocks of colour. */
+:root {
+  --hb-paper: #fbf8f2;
+  --hb-sand: #f1ebdf;
+  --hb-ink: #1c1a16;
+  --hb-soft: #57534a;
+  --hb-faint: #8c867a;
+  --hb-line: #e3dccd;
+  --hb-terra: #c8553d;
+  --hb-kunyit: #f2c14e;
+  --hb-daun: #b9d3a8;
+  --hb-langit: #3657d6;
+  --hb-rose: #f3c9c0;
+  --hb-display: "Shantell Sans Variable", "Shantell Sans", "Figtree Variable", sans-serif;
+  --hb-serif: "Fraunces Variable", "Fraunces", Georgia, serif;
+  --hb-body: "Figtree Variable", "Figtree", system-ui, sans-serif;
+  --hb-mono: "DM Mono", ui-monospace, monospace;
+
+  --background: var(--hb-paper);
+  --foreground: var(--hb-ink);
+  --card: #ffffff;
+  --card-foreground: var(--hb-ink);
+  --primary: var(--hb-ink);
+  --primary-foreground: #ffffff;
+  --muted: var(--hb-sand);
+  --muted-foreground: var(--hb-soft);
+  --border: var(--hb-line);
+  --input: #d6cebd;
+  --ring: var(--hb-ink);
+}
+
 @theme inline {
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--hb-body);
+  --font-display: var(--hb-display);
+  --font-serif: var(--hb-serif);
+  --font-mono: var(--hb-mono);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -30,18 +75,55 @@
   --color-ring: var(--ring);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
+  --color-paper: var(--hb-paper);
+  --color-sand: var(--hb-sand);
+  --color-ink: var(--hb-ink);
+  --color-soft: var(--hb-soft);
+  --color-terra: var(--hb-terra);
+  --color-kunyit: var(--hb-kunyit);
+  --color-daun: var(--hb-daun);
+  --color-langit: var(--hb-langit);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
-/* The Opini-style marker: a yellow block behind black text. */
 @utility highlight {
   @apply bg-highlight text-highlight-foreground px-1;
+}
+
+/* Small toast used across the app. */
+.hb-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 100;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--hb-ink);
+  color: #fff;
+  font: 500 14px / 1.4 var(--hb-body);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+  animation: hb-toast-in 0.25s ease-out;
+}
+@keyframes hb-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
 }

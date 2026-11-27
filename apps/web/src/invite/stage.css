@@ -1,0 +1,114 @@
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  background-color: var(--stage-bg);
+  background-image: var(--stage-pattern);
+}
+.stage-column {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+}
+@media (min-width: 640px) {
+  .stage {
+    align-items: center;
+    background-color: color-mix(in srgb, var(--stage-bg) 75%, #000);
+  }
+  .stage-column {
+    width: 430px;
+    height: min(920px, calc(100dvh - 40px));
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 10px #1c1a16,
+      0 40px 80px rgb(0 0 0 / 0.35);
+  }
+}
+
+.stage-bar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+.stage-bar > * {
+  pointer-events: auto;
+}
+.stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.9);
+  color: #1c1a16;
+  font: 600 13px / 1 var(--hb-body);
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.12);
+}
+.stage-chip.is-primary {
+  background: #1c1a16;
+  color: #fff;
+}
+.stage-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.9);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.12);
+}
+.stage-toggle button {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: 600 12px / 1 var(--hb-body);
+  color: #57534a;
+}
+.stage-toggle button[aria-pressed="true"] {
+  background: #1c1a16;
+  color: #fff;
+}
+@media (min-width: 640px) {
+  .stage-bar {
+    top: 20px;
+    left: 24px;
+    right: 24px;
+  }
+}
+
+.stage-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  padding: 32px;
+  background: var(--hb-paper);
+  font-family: var(--hb-body);
+  text-align: center;
+  color: var(--hb-ink);
+}
+.stage-message h1 {
+  margin: 0;
+  font-family: var(--hb-display);
+  font-size: 28px;
+}
+fieldset.stage-toggle {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+}

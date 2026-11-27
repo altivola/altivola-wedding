@@ -4,10 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { loginRoute } from '@/routes/login'
-import { notesRoute } from '@/routes/notes'
-import { rootRoute } from '@/routes/root'
-import { exampleRoute, guestRoute, studioRoute, weddingRoute } from '@/routes/wedding'
+import { routeTree } from '@/router'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN })
@@ -16,9 +13,10 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 const queryClient = new QueryClient()
 
 const router = createRouter({
-  routeTree: rootRoute.addChildren([weddingRoute, studioRoute, exampleRoute, guestRoute, notesRoute, loginRoute]),
+  routeTree,
   context: { queryClient },
   defaultPreload: 'intent',
+  scrollRestoration: true,
 })
 
 declare module '@tanstack/react-router' {

@@ -16,8 +16,8 @@ export default defineConfig({
       manifest: {
         name: 'Hari Bersama',
         short_name: 'Hari Bersama',
-        theme_color: '#000000',
-        background_color: '#000000',
+        theme_color: '#fbf8f2',
+        background_color: '#fbf8f2',
         display: 'standalone',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -26,7 +26,6 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globIgnores: ['**/wedding-scene-*.js', '**/wedding-garden-*.js', '**/three.module-*.js'],
         navigateFallbackDenylist: [/^\/api/, /^\/rpc/],
       },
     }),

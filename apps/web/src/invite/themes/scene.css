@@ -1,0 +1,9 @@
+.theme-painting {
+  visibility: hidden;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.theme-painting[data-ready] {
+  visibility: visible;
+}
